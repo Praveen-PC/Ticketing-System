@@ -30,8 +30,8 @@ const Dashboard = () => {
   const firstIndex=lastIndex-recordPerPage
   const records=datatoPaginate.slice(firstIndex,lastIndex)
   const nPage=Math.ceil(datatoPaginate.length/recordPerPage);
-  const numbers= [...Array(nPage+1).keys()].slice(1)
-  const pageLimit=4
+
+  const pageLimit=3
   const pageStart=Math.floor((currentPage-1)/pageLimit)*pageLimit+1
   const pageEnd=Math.min(pageStart+pageLimit-1,nPage) 
 
@@ -43,7 +43,6 @@ const Dashboard = () => {
     if(currentPage !== 1  ){
       setCurrentPage(currentPage-1)
     }
-
   }
   const changeCurrentPage = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -53,7 +52,6 @@ const Dashboard = () => {
     if(currentPage !== nPage){
       setCurrentPage(currentPage+1)
     }
-
   }
 
   const fetchData = async () => {
@@ -68,7 +66,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, [data]);
+  }, [form]);
 
   const handleEdit = (value) => {
     setform({
@@ -169,10 +167,11 @@ const Dashboard = () => {
                 <input
                   type="search"
                   className="form-control " style={{width:'280px'}}
-                  placeholder="Search by Ticket Code or Controller No."
+                   placeholder="Search by TicketCode|Controller"
                   onChange={handleSearch}
                 />
               </div>
+ 
 
               <div >
                 <small>
@@ -197,6 +196,7 @@ const Dashboard = () => {
                   </nav>
                 </small>
               </div>
+
             </div>
           </div>
         </div>
@@ -215,7 +215,7 @@ const Dashboard = () => {
                 >
                   <div className="card shadow-sm h-100 rounded bg-light">
                     <div className="card-body">
-                      <h5 className="card-title text-primary mb-3">
+                      <h5 className="card-title text-primary mb-3 fw-bold">
                         {value.ticketcode}
                       </h5>
                       <p className="card-text">
@@ -231,7 +231,7 @@ const Dashboard = () => {
                         <strong>State:</strong> {value.state}
                       </p>
                       <p className="card-text">
-                        <strong>Complaint Type:</strong> {value.complainttype}
+                        <strong>Complaint:</strong> {value.complainttype}
                       </p>
                       <p className="card-text">
                         <strong>Details:</strong> {value.details}
