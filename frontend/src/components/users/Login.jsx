@@ -23,10 +23,10 @@ const Login = () => {
 
             if (decodedToken.role === 'admin') {
                 sessionStorage.setItem('authtoken', token)
-                navigate('/dashboard')
+                navigate('/admindashboard')
             } else if (decodedToken.role === 'user') {
                 sessionStorage.setItem('authtoken', token)
-                navigate('/about')  
+                navigate('/userdashboard')  
             } else {
                 console.log('Unknown role')
             }

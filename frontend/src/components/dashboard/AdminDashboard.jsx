@@ -21,7 +21,7 @@ const Dashboard = () => {
     picture: "",
   });
 
-
+  
 
   const [currentPage,setCurrentPage]=useState(1)
   const recordPerPage=8
@@ -154,11 +154,7 @@ const Dashboard = () => {
             class="btn btn-primary btn-sm"
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
-            data-bs-whatever="@mdo"
-            onClick={reset}
-          >
-            Add Ticket
-          </button>
+            data-bs-whatever="@mdo" onClick={reset}>Add Ticket</button>
         </div>
         <div className="mt-3 container">
           <div className="rounded border shadow-sm bg-light">
