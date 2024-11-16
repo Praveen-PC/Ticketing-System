@@ -3,8 +3,6 @@ import Header from "./Header";
 import axios from "axios";
 import { format } from "date-fns";
 
-
-
 const Dashboard = () => {
   const [data, setdata] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -23,59 +21,76 @@ const Dashboard = () => {
     picture: "",
   });
 
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordPerPage = 8;
+  const datatoPaginate = filterData.length > 0 ? filterData : data;
+  const lastIndex = currentPage * recordPerPage;
+  const firstIndex = lastIndex - recordPerPage;
+  const records = datatoPaginate.slice(firstIndex, lastIndex);
+  const nPage = Math.ceil(datatoPaginate.length / recordPerPage);
 
-  const [currentPage,setCurrentPage]=useState(1)
-  const recordPerPage=8
-  const datatoPaginate=filterData.length>0 ? filterData: data
-  const lastIndex=currentPage * recordPerPage
-  const firstIndex=lastIndex-recordPerPage
-  const records=datatoPaginate.slice(firstIndex,lastIndex)
-  const nPage=Math.ceil(datatoPaginate.length/recordPerPage);
+  const pageLimit = 3;
+  const pageStart = Math.floor((currentPage - 1) / pageLimit) * pageLimit + 1;
+  const pageEnd = Math.min(pageStart + pageLimit - 1, nPage);
 
-  const pageLimit=3
-  const pageStart=Math.floor((currentPage-1)/pageLimit)*pageLimit+1
-  const pageEnd=Math.min(pageStart+pageLimit-1,nPage) 
-
-  const pageNumber=[]
-  for (let i=pageStart;i <= pageEnd;i++){
-    pageNumber.push(i)
+  const pageNumber = [];
+  for (let i = pageStart; i <= pageEnd; i++) {
+    pageNumber.push(i);
   }
-  const prePage=()=>{
-    if(currentPage !== 1  ){
-      setCurrentPage(currentPage-1)
+  const prePage = () => {
+    if (currentPage !== 1) {
+      setCurrentPage(currentPage - 1);
     }
-  }
+  };
   const changeCurrentPage = (pageNumber) => {
     setCurrentPage(pageNumber);
-};
+  };
 
-  const nextPage=()=>{
-    if(currentPage !== nPage){
-      setCurrentPage(currentPage+1)
+  const nextPage =  () => {
+    if (currentPage !== nPage) {
+      setCurrentPage(currentPage + 1);
     }
+  };
+
+  const decodeToken= ()=>{
+    const token = sessionStorage.getItem("authtoken");
+    if (!token && !token.startsWith("Bearer ")) {
+      console.log("no token found");
+      return;
+    }
+    const jwttoken = token.split(".")[1];
+    const decoded = JSON.parse(atob(jwttoken));
+
+    console.log(decoded);
+    return decoded
+   
   }
 
   const fetchData = async () => {
-    const token=sessionStorage.getItem('authtoken')  
-    if (!token && !token.startsWith('Bearer ')){
-      console.log("no token found")
-      return;
-    }
-    const jwttoken = token.split('.')[1];  
-  const decode = JSON.parse(atob(jwttoken));   
-  
-  console.log(decode);  
-  console.log(decode.role); 
+    const token = sessionStorage.getItem("authtoken");
+    // if (!token && !token.startsWith("Bearer ")) {
+    //   console.log("no token found");
+    //   return;
+    // }
+    // const jwttoken = token.split(".")[1];
+    // const decode = JSON.parse(atob(jwttoken));
+    // console.log(decode)
+    // console.log(decode.role);
+     const decode = await decodeToken()
     try {
-      if(decode.role=='admin'){
-        const response = await axios.get("http://localhost:8080/api/getticket",{ headers: { Authorization: `Bearer ${token}` }});
+      if (decode.role == "admin") {
+        const response = await axios.get(
+          "http://localhost:8080/api/getticket",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setdata(response.data.reverse());
       }
-      if(decode.role=='user'){
-        const response = await axios.get("http://localhost:8080/api/getticket/user",{ headers: { Authorization: `Bearer ${token}` }});
+      if (decode.role == "user") {
+        const response = await axios.get(
+          "http://localhost:8080/api/getticket/user",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setdata(response.data.reverse());
-
       }
     } catch (error) {
       console.log(error);
@@ -104,12 +119,17 @@ const Dashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const decode=await decodeToken()
     try {
       const endpoint = editing
         ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`
         : "http://localhost:8080/api/addticket";
       const method = editing ? "put" : "post";
-      const response = await axios[method](endpoint, form);
+      const formData={
+        ...form,
+        user_id:decode.id
+      }
+      const response = await axios[method](endpoint, formData);
       console.log(response.data);
       reset();
     } catch (error) {
@@ -129,20 +149,19 @@ const Dashboard = () => {
     }
   };
 
-  
   const handleSearch = (e) => {
-    const value = e.target.value.trim();   
-    setSearch(value);               
+    const value = e.target.value.trim();
+    setSearch(value);
     const searchTerm = data.filter((item) => {
       return (
         item.ticketcode.toLowerCase().includes(value.toLowerCase()) ||
         item.controllerno.toLowerCase().includes(value.toLowerCase())
       );
     });
-    console.log(searchTerm);         
-    setFilterdata(searchTerm);       
+    console.log(searchTerm);
+    setFilterdata(searchTerm);
   };
-  
+
   const reset = () => {
     setform({
       customername: "",
@@ -171,7 +190,11 @@ const Dashboard = () => {
             class="btn btn-primary btn-sm"
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
-            data-bs-whatever="@mdo" onClick={reset}>Add Ticket</button>
+            data-bs-whatever="@mdo"
+            onClick={reset}
+          >
+            Add Ticket
+          </button>
         </div>
         <div className="mt-3 container">
           <div className="rounded border shadow-sm bg-light">
@@ -179,29 +202,56 @@ const Dashboard = () => {
               <div className="d-flex gap-3 align-items-center">
                 <input
                   type="search"
-                  className="form-control " style={{width:'280px'}}
-                   placeholder="Search by TicketCode|Controller"
+                  className="form-control "
+                  style={{ width: "280px" }}
+                  placeholder="Search by TicketCode|Controller"
                   onChange={handleSearch}
                 />
               </div>
- 
 
-              <div >
+              <div>
                 <small>
-                  <nav aria-label="Page navigation example" >
+                  <nav aria-label="Page navigation example">
                     <ul className="pagination justify-content-center">
                       <li className="page-item">
-                        <a className="page-link" href="#" aria-label="Previous" onClick={(e)=>{e.preventDefault(),prePage()}}>
+                        <a
+                          className="page-link"
+                          href="#"
+                          aria-label="Previous"
+                          onClick={(e) => {
+                            e.preventDefault(), prePage();
+                          }}
+                        >
                           <span aria-hidden="true">&laquo;</span>
                         </a>
-                      </li> 
-                      {pageNumber.map((n,i)=>(
-                        <li key={i}  className={`page-item ${currentPage===n ? 'active' :""}`}>
-                          <a href="" onClick={(e)=>{e.preventDefault(),changeCurrentPage(n)}} className="page-link">{n}</a>
+                      </li>
+                      {pageNumber.map((n, i) => (
+                        <li
+                          key={i}
+                          className={`page-item ${
+                            currentPage === n ? "active" : ""
+                          }`}
+                        >
+                          <a
+                            href=""
+                            onClick={(e) => {
+                              e.preventDefault(), changeCurrentPage(n);
+                            }}
+                            className="page-link"
+                          >
+                            {n}
+                          </a>
                         </li>
-                      ))} 
+                      ))}
                       <li className="page-item">
-                        <a className="page-link" href="#" aria-label="Next" onClick={(e)=>{e.preventDefault(),nextPage()}}>
+                        <a
+                          className="page-link"
+                          href="#"
+                          aria-label="Next"
+                          onClick={(e) => {
+                            e.preventDefault(), nextPage();
+                          }}
+                        >
                           <span aria-hidden="true">&raquo;</span>
                         </a>
                       </li>
@@ -209,7 +259,6 @@ const Dashboard = () => {
                   </nav>
                 </small>
               </div>
-
             </div>
           </div>
         </div>

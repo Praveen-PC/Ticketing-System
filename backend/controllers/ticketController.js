@@ -22,7 +22,7 @@ const checkUnique=async(ticketcode)=>{
 }
 
 const postticket = async (req, res) => {
-    const { customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture } = req.body;
+    const { customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id } = req.body;
 
     try {
         const ticketcode = "TICK" + await autoTicketCode();
@@ -33,8 +33,8 @@ const postticket = async (req, res) => {
             isUnique=await checkUnique(ticketcode)
         }
 
-            const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
-            await db.query(sql, [ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture]);
+            const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+            await db.query(sql, [ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id]);
             return res.status(200).send({ message: 'Ticket inserted successfully', ticketcode });
        
     } catch (error) {
@@ -59,8 +59,9 @@ const getTicketDetails=async(req,res)=>{
 const getTicketUser = async (req, res) => {
     const id = req.user.id; 
     try {
-        const sql = 'SELECT * FROM userdetails WHERE id=?'; 
+        const sql = 'SELECT * FROM ticketdetails WHERE  user_id=?'; 
         const [result] = await db.query(sql, [id]);
+       
         res.status(200).json(result);
         console.log(result)
     } catch (error) {
