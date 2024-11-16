@@ -3,6 +3,8 @@ import Header from "./Header";
 import axios from "axios";
 import { format } from "date-fns";
 
+
+
 const Dashboard = () => {
   const [data, setdata] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -55,10 +57,26 @@ const Dashboard = () => {
   }
 
   const fetchData = async () => {
+    const token=sessionStorage.getItem('authtoken')  
+    if (!token && !token.startsWith('Bearer ')){
+      console.log("no token found")
+      return;
+    }
+    const jwttoken = token.split('.')[1];  
+  const decode = JSON.parse(atob(jwttoken));   
+  
+  console.log(decode);  
+  console.log(decode.role); 
     try {
-      const response = await axios.get("http://localhost:8080/api/getticket");
-      // console.log(response.data);
-      setdata(response.data.reverse());
+      if(decode.role=='admin'){
+        const response = await axios.get("http://localhost:8080/api/getticket",{ headers: { Authorization: `Bearer ${token}` }});
+        setdata(response.data.reverse());
+      }
+      if(decode.role=='user'){
+        const response = await axios.get("http://localhost:8080/api/getticket/user",{ headers: { Authorization: `Bearer ${token}` }});
+        setdata(response.data.reverse());
+
+      }
     } catch (error) {
       console.log(error);
     }
@@ -119,7 +137,6 @@ const Dashboard = () => {
       return (
         item.ticketcode.toLowerCase().includes(value.toLowerCase()) ||
         item.controllerno.toLowerCase().includes(value.toLowerCase())
-        // item.created_at.toString().toLowerCase().includes(value.toLowerCase())
       );
     });
     console.log(searchTerm);         

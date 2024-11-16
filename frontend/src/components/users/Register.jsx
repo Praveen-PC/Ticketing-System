@@ -33,7 +33,7 @@ const Register = () => {
     <Header/>
       <div className='container d-flex justify-content-center align-items-center vh-100 '>
         
-        <form className='rounded shadow p-5 bg-light' onSubmit={handleSubmit}>
+    <form className='rounded shadow p-5 bg-light' onSubmit={handleSubmit}>
         <h2 className='text-center'>Register</h2>
             <div className='mb-3'>
                 <label htmlFor="name" className='form-label'>Name</label>
@@ -49,11 +49,7 @@ const Register = () => {
             </div>
             <button className='btn btn-info'>Register</button>
         </form>
-
-
-    
-
-      </div>
+    </div>
     </>
   )
 }

@@ -10,6 +10,7 @@ const autoTicketCode = async () => {
         throw new Error('Error generating ticket code');
     }
 };
+
 const checkUnique=async(ticketcode)=>{
     try{
         const checkTicket='SELECT * From ticketdetails WHERE ticketcode=?'
@@ -53,6 +54,21 @@ const getTicketDetails=async(req,res)=>{
     }
 }
 
+
+
+const getTicketUser = async (req, res) => {
+    const id = req.user.id; 
+    try {
+        const sql = 'SELECT * FROM userdetails WHERE id=?'; 
+        const [result] = await db.query(sql, [id]);
+        res.status(200).json(result);
+        console.log(result)
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Error retrieving user's ticket details", error: error.message });
+    }
+};
+
 const updateTicketDetails=async(req,res)=>{
     const {ticketcode}=req.params
     try{
@@ -76,4 +92,4 @@ const deleteTicketDetails=async(req,res)=>{
         res.status(400).send(error)
     }
 }
-module.exports = { postticket,getTicketDetails,updateTicketDetails ,deleteTicketDetails};
+module.exports = { postticket,getTicketDetails,updateTicketDetails ,deleteTicketDetails,getTicketUser};

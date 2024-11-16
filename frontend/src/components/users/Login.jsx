@@ -14,24 +14,23 @@ const Login = () => {
         e.preventDefault()
         try{
             const response=await axios.post('http://localhost:8080/api/loginuser',{phoneNo,password})
-            console.log(response)
             const token=response.data.token
             console.log("JWT Token:", token);
             const decodedToken = JSON.parse(atob(token.split('.')[1]))  
-
             console.log("Decoded JWT Token:", decodedToken)
+            sessionStorage.setItem('authtoken', token)
+                navigate('/dashboard')
 
-            if (decodedToken.role === 'admin') {
-                sessionStorage.setItem('authtoken', token)
-                navigate('/admindashboard')
-            } else if (decodedToken.role === 'user') {
-                sessionStorage.setItem('authtoken', token)
-                navigate('/userdashboard')  
-            } else {
-                console.log('Unknown role')
-            }
+            // if (decodedToken.role === 'admin') {
+            //     sessionStorage.setItem('authtoken', token)
+            //     navigate('/admindashboard')
+            // } else if (decodedToken.role === 'user') {
+            //     sessionStorage.setItem('authtoken', token)
+            //     navigate('/admindashboard')  
+            // } else {
+            //     console.log('Unknown role')
+            // }
             reset()
-            console.log(response.data.token)
         }catch(error){
             console.log(error)
         }

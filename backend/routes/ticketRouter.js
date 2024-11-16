@@ -1,11 +1,14 @@
 const express=require('express')
 const router=express.Router()
+const verifyToken=require('../middlewares/authmiddleware')
+const rolemiddleware=require('../middlewares/rolemiddleware')
 
 const ticketController=require('../controllers/ticketController')
 
 
 router.post('/addticket',ticketController.postticket)
-router.get('/getticket',ticketController.getTicketDetails)
+router.get('/getticket',verifyToken,rolemiddleware("admin"),ticketController.getTicketDetails)
+router.get('/getticket/user',verifyToken,rolemiddleware("user"),ticketController.getTicketUser)
 router.put('/updateticket/:ticketcode',ticketController.updateTicketDetails)
 router.delete('/deleteticket/:ticketcode',ticketController.deleteTicketDetails)
 
