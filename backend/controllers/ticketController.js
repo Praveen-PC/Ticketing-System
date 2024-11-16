@@ -61,7 +61,6 @@ const getTicketUser = async (req, res) => {
     try {
         const sql = 'SELECT * FROM ticketdetails WHERE  user_id=?'; 
         const [result] = await db.query(sql, [id]);
-       
         res.status(200).json(result);
         console.log(result)
     } catch (error) {
