@@ -3,11 +3,15 @@ import Header from "./Header";
 import axios from "axios";
 import { format } from "date-fns";
 
+
 const Dashboard = () => {
   const [data, setdata] = useState([]);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const [filterData, setFilterdata] = useState([]);
+  
+ 
+
   const [form, setform] = useState({
     customername: "",
     controllerno: "",
@@ -18,7 +22,8 @@ const Dashboard = () => {
     faultcode: "",
     complainttype: "",
     details: "",
-    picture: "",
+    picture:null,
+    status:"open"
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,7 +33,6 @@ const Dashboard = () => {
   const firstIndex = lastIndex - recordPerPage;
   const records = datatoPaginate.slice(firstIndex, lastIndex);
   const nPage = Math.ceil(datatoPaginate.length / recordPerPage);
-
   const pageLimit = 3;
   const pageStart = Math.floor((currentPage - 1) / pageLimit) * pageLimit + 1;
   const pageEnd = Math.min(pageStart + pageLimit - 1, nPage);
@@ -46,13 +50,15 @@ const Dashboard = () => {
     setCurrentPage(pageNumber);
   };
 
-  const nextPage =  () => {
+  const nextPage = () => {
     if (currentPage !== nPage) {
       setCurrentPage(currentPage + 1);
     }
   };
 
-  const decodeToken= ()=>{
+
+
+  const decodeToken = () => {
     const token = sessionStorage.getItem("authtoken");
     if (!token && !token.startsWith("Bearer ")) {
       console.log("no token found");
@@ -62,34 +68,21 @@ const Dashboard = () => {
     const decoded = JSON.parse(atob(jwttoken));
 
     console.log(decoded);
-    return decoded
-   
-  }
+    return decoded;
+  };
+  const role= decodeToken()
+  
 
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
-    // if (!token && !token.startsWith("Bearer ")) {
-    //   console.log("no token found");
-    //   return;
-    // }
-    // const jwttoken = token.split(".")[1];
-    // const decode = JSON.parse(atob(jwttoken));
-    // console.log(decode)
-    // console.log(decode.role);
-     const decode = await decodeToken()
+    const decode = await decodeToken();
     try {
       if (decode.role == "admin") {
-        const response = await axios.get(
-          "http://localhost:8080/api/getticket",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axios.get("http://localhost:8080/api/getticket",{ headers: {  Authorization: `Bearer ${token}` } });
         setdata(response.data.reverse());
       }
       if (decode.role == "user") {
-        const response = await axios.get(
-          "http://localhost:8080/api/getticket/user",
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axios.get("http://localhost:8080/api/getticket/user",{ headers: {   Authorization: `Bearer ${token}` } });
         setdata(response.data.reverse());
       }
     } catch (error) {
@@ -100,6 +93,8 @@ const Dashboard = () => {
   useEffect(() => {
     fetchData();
   }, [form]);
+
+
 
   const handleEdit = (value) => {
     setform({
@@ -113,23 +108,24 @@ const Dashboard = () => {
       complainttype: value.complainttype,
       details: value.details,
       picture: value.picture,
+      status:value.status
     });
     setEditing(value);
   };
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const decode=await decodeToken()
+    const decode = await decodeToken();
     try {
-      const endpoint = editing
-        ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`
-        : "http://localhost:8080/api/addticket";
+      const endpoint = editing ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`: "http://localhost:8080/api/addticket";
       const method = editing ? "put" : "post";
-      const formData={
+      const formData = {
         ...form,
-        user_id:decode.id
-      }
-      const response = await axios[method](endpoint, formData);
+        user_id: decode.id,
+      };
+      const response = await axios[method](endpoint,formData,{ headers: {"Content-Type": "multipart/form-data", },} );
       console.log(response.data);
       reset();
     } catch (error) {
@@ -139,9 +135,7 @@ const Dashboard = () => {
 
   const handleDelete = async (ticketcode) => {
     try {
-      const response = await axios.delete(
-        `http://localhost:8080/api/deleteticket/${ticketcode}`
-      );
+      const response = await axios.delete(`http://localhost:8080/api/deleteticket/${ticketcode}`);
       console.log(response.data);
       fetchData();
     } catch (error) {
@@ -155,7 +149,9 @@ const Dashboard = () => {
     const searchTerm = data.filter((item) => {
       return (
         item.ticketcode.toLowerCase().includes(value.toLowerCase()) ||
-        item.controllerno.toLowerCase().includes(value.toLowerCase())
+        item.controllerno.toLowerCase().includes(value.toLowerCase()) ||
+        item.status.toLowerCase().includes(value.toLowerCase()) 
+        
       );
     });
     console.log(searchTerm);
@@ -173,14 +169,15 @@ const Dashboard = () => {
       faultcode: "",
       complainttype: "",
       details: "",
-      picture: "",
+      picture: null,
+      status:"open"
     });
     setEditing(null);
   };
 
   return (
     <>
-      <Header />
+      <Header role={role} />
 
       <div className="container mt-3">
         <div className="d-flex justify-content-between">
@@ -196,6 +193,7 @@ const Dashboard = () => {
             Add Ticket
           </button>
         </div>
+
         <div className="mt-3 container">
           <div className="rounded border shadow-sm bg-light">
             <div className="d-flex flex-wrap justify-content-between p-3 align-items-center gap-3">
@@ -218,40 +216,18 @@ const Dashboard = () => {
                           className="page-link"
                           href="#"
                           aria-label="Previous"
-                          onClick={(e) => {
-                            e.preventDefault(), prePage();
-                          }}
+                          onClick={(e) => {e.preventDefault(), prePage();}}
                         >
                           <span aria-hidden="true">&laquo;</span>
                         </a>
                       </li>
                       {pageNumber.map((n, i) => (
-                        <li
-                          key={i}
-                          className={`page-item ${
-                            currentPage === n ? "active" : ""
-                          }`}
-                        >
-                          <a
-                            href=""
-                            onClick={(e) => {
-                              e.preventDefault(), changeCurrentPage(n);
-                            }}
-                            className="page-link"
-                          >
-                            {n}
-                          </a>
+                        <li  key={i} className={`page-item ${currentPage === n ? "active" : ""}`}>
+                          <a href="" onClick={(e) => {e.preventDefault(), changeCurrentPage(n);}}className="page-link" >{n}</a>
                         </li>
                       ))}
                       <li className="page-item">
-                        <a
-                          className="page-link"
-                          href="#"
-                          aria-label="Next"
-                          onClick={(e) => {
-                            e.preventDefault(), nextPage();
-                          }}
-                        >
+                        <a className="page-link"  href="#"aria-label="Next"onClick={(e) => {e.preventDefault(), nextPage();}}>
                           <span aria-hidden="true">&raquo;</span>
                         </a>
                       </li>
@@ -271,66 +247,40 @@ const Dashboard = () => {
               </div>
             ) : (
               records.map((value, id) => (
-                <div
-                  key={id}
-                  className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
-                >
+                <div key={id} className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4" >
                   <div className="card shadow-sm h-100 rounded bg-light">
                     <div className="card-body">
-                      <h5 className="card-title text-primary mb-3 fw-bold">
-                        {value.ticketcode}
-                      </h5>
-                      <p className="card-text">
-                        <strong>Customer Name:</strong> {value.customername}
-                      </p>
-                      <p className="card-text">
-                        <strong>Controller No:</strong> {value.controllerno}
-                      </p>
-                      <p className="card-text">
-                        <strong>Fault Code:</strong> {value.faultcode}
-                      </p>
-                      <p className="card-text">
-                        <strong>State:</strong> {value.state}
-                      </p>
-                      <p className="card-text">
-                        <strong>Complaint:</strong> {value.complainttype}
-                      </p>
-                      <p className="card-text">
-                        <strong>Details:</strong> {value.details}
-                      </p>
+                      <div className="d-flex justify-content-between">
+                      <h5 className="card-title text-primary mb-3 fw-bold">{value.ticketcode}</h5>
+                      {value.status==='open'? <h6 className="card-title text-primary mb-3 fw-small text-success ">{value.status}</h6> : <h6 className="card-title text-primary mb-3 fw-bold text-danger">{value.status} </h6>}
+                      </div>
+                      <p className="card-text"><strong>Customer Name:</strong> {value.customername}</p>
+                      <p className="card-text"><strong>Controller No:</strong> {value.controllerno}</p>
+                      <p className="card-text"><strong>Fault Code:</strong> {value.faultcode}</p>
+                      <p className="card-text"><strong>State:</strong> {value.state}</p>
+                      <p className="card-text"><strong>Complaint:</strong> {value.complainttype}</p>
+                      <p className="card-text"><strong>Details:</strong> {value.details}</p>
                     </div>
 
                     <div className="card-footer bg-light border-top-0">
-                      <div
-                        className="btn-group w-100"
-                        role="group"
-                        aria-label="Actions"
-                      >
-                        <button
-                          type="button"
+                      <div className="btn-group w-100" role="group" aria-label="Actions">
+                        <button type="button"
                           className="btn btn-outline-primary btn-sm w-100 mb-2 mb-sm-0"
                           data-bs-toggle="modal"
                           data-bs-target="#staticBackdrop"
-                          onClick={() => handleEdit(value)}
-                        >
-                          <i className="fa-regular fa-eye"></i>
+                          onClick={() => handleEdit(value)}><i className="fa-regular fa-eye"></i>
                         </button>
 
-                        <button
-                          type="button"
+                        <button type="button"
                           className="btn btn-outline-primary btn-sm w-100 w-100 mb-2 mb-sm-0"
                           data-bs-toggle="modal"
                           data-bs-target="#exampleModal"
-                          onClick={() => handleEdit(value)}
-                        >
-                          <i className="fa-regular fa-pen-to-square"></i>
+                          onClick={() => handleEdit(value)}><i className="fa-regular fa-pen-to-square"></i>
                         </button>
-                        <button
-                          type="button"
+
+                        <button  type="button"
                           className="btn btn-outline-primary btn-sm w-100 w-100 mb-2 mb-sm-0"
-                          onClick={() => handleDelete(value.ticketcode)}
-                        >
-                          <i className="fa-solid fa-trash"></i>
+                          onClick={() => handleDelete(value.ticketcode)}> <i className="fa-solid fa-trash"></i>
                         </button>
                       </div>
                     </div>
@@ -343,26 +293,15 @@ const Dashboard = () => {
       </div>
 
       <div
-        className="modal fade"
-        id="exampleModal"
-        tabIndex="-1"
-        aria-labelledby="exampleModalLabel"
-        aria-hidden="true"
-      >
+        className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" >
         <div className="modal-dialog modal-lg">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title fw-bold " id="exampleModalLabel">
-                {editing ? (
-                  <>
-                    Update Ticket :
-                    <span className="text-primary mx-1">
-                      {editing.ticketcode}
-                    </span>
-                  </>
-                ) : (
-                  "Raise Ticket"
-                )}
+                {editing ?
+                 (<> Update Ticket :<span className="text-primary mx-1">{editing.ticketcode}</span></> ) 
+                 :("Raise Ticket")
+                }
               </h5>
               <button
                 type="button"
@@ -372,7 +311,7 @@ const Dashboard = () => {
               ></button>
             </div>
             <div className="modal-body">
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} enctype="multipart/form-data">
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label htmlFor="customername" className="form-label">
@@ -548,17 +487,31 @@ const Dashboard = () => {
                       Picture:
                     </label>
                     <input
-                      type="text"
+                      type="file"
                       className="form-control"
                       id="picture"
-                      value={form.picture}
-                      onChange={(e) =>
-                        setform({ ...form, picture: e.target.value })
-                      }
-                      accept="image/*"
+                      accept='image/*'
+                      onChange={(e) =>setform({ ...form, picture: e.target.files[0] })  }
                     />
                   </div>
                 </div>
+                {role.role==='admin' ?<>
+                  <div className="row">
+                  <div className="col-12 mb-3">
+                    <label htmlFor="status" className="form-label">
+                      Status :
+                    </label>
+                    <select  id="status" className="form-select" value={form.status} onChange={(e)=>setform({...form,status:e.target.value})}>
+                      <option value="open">open</option>
+                      <option value="close">close</option>
+                    </select>
+                  </div>
+                </div>
+                </> :""}
+
+              
+
+                
 
                 <div className="modal-footer">
                   <button
@@ -656,17 +609,16 @@ const Dashboard = () => {
                   {editing ? editing.details : form.details}
                 </p>
 
-                {form.picture && (
+                
                   <div className="mt-2">
                     <strong>Picture:</strong>
                     <img
-                      src={form.picture}
+                      src={`http://localhost:8080/${form.picture}`}
                       alt="Ticket Image"
                       className="img-fluid mt-2"
                       style={{ maxHeight: "300px", objectFit: "contain" }}
                     />
                   </div>
-                )}
               </div>
             </div>
             <div className="modal-footer">
@@ -681,6 +633,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+     
     </>
   );
 };

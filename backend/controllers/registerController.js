@@ -21,5 +21,38 @@ const postUser= async(req,res)=>{
         return res.status(400).send({error: error.message})
     }
 }
+const getUser=async(req,res)=>{
+    try{
+        const sql="SELECT * FROM userdetails"
+        const [result]=await db.query(sql)
+        res.status(200).send(result)
+    }catch(error){
+        res.status(400).send(error)
+    }
+}
 
-module.exports={postUser}
+const updateUser=async(req,res)=>{
+    const {id}=req.params
+    const {role}=req.body
+    try{
+        const sql='UPDATE userdetails SET role=? WHERE id=?'
+        await db.query(sql,[role,id])
+        res.status(200).send(`role updated to ${role}`)
+    }catch(error){
+        res.status(400).send(error)
+    }
+}
+
+const deleteUser=async(req,res)=>{
+    const {id}=req.params
+    try{
+        const sql='DELETE FROM userdetails WHERE id=?'
+        await db.query(sql,[id])
+        res.status(200).send("deleted successfully....!")
+
+    }catch(error){
+        res.status(400).send(error)
+    }
+}
+
+module.exports={postUser,getUser,deleteUser,updateUser}

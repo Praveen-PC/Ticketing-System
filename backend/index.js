@@ -2,6 +2,7 @@ const express=require('express')
 const bodyparser=require('body-parser')
 const cors=require('cors')
 require('dotenv').config()
+const path=require('path')
 
 const registerRoutes=require('./routes/registerRouter')
 const loginRouter=require('./routes/loginRouter')
@@ -17,6 +18,9 @@ app.use(express.json())
 app.get('/',(req,res)=>{
     res.send("hello")
 })
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 app.use('/api',registerRoutes)
 app.use('/api',loginRouter)

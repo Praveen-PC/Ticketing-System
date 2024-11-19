@@ -1,5 +1,6 @@
 const db = require('../model/db');
-
+const multer=require('multer')
+const path=require('path')
 
 const autoTicketCode = async () => {
     try {
@@ -7,7 +8,6 @@ const autoTicketCode = async () => {
         return randomticket
     } catch (error) {
         console.error('Error generating ticket code:', error);
-        throw new Error('Error generating ticket code');
     }
 };
 
@@ -21,9 +21,21 @@ const checkUnique=async(ticketcode)=>{
     }
 }
 
-const postticket = async (req, res) => {
-    const { customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id } = req.body;
+const storage=multer.diskStorage({
+    destination:(req,res,cb)=>{
+        cb(null,'uploads/')
+},
+filename:(req,file,cb)=>{
+    cb(null,Date.now()+path.extname(file.originalname))
+}
+})
 
+const upload=multer({storage:storage})
+
+
+const postticket = async (req, res) => {
+    const { customername, controllerno, state, district, village, block, faultcode, complainttype, details,user_id,status } = req.body;
+    const picture = req.file ? req.file.path: null;
     try {
         const ticketcode = "TICK" + await autoTicketCode();
         const isUnique=await checkUnique(ticketcode)
@@ -33,8 +45,8 @@ const postticket = async (req, res) => {
             isUnique=await checkUnique(ticketcode)
         }
 
-            const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-            await db.query(sql, [ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id]);
+            const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            await db.query(sql, [ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id,status]);
             return res.status(200).send({ message: 'Ticket inserted successfully', ticketcode });
        
     } catch (error) {
@@ -62,22 +74,20 @@ const getTicketUser = async (req, res) => {
         const sql = 'SELECT * FROM ticketdetails WHERE  user_id=?'; 
         const [result] = await db.query(sql, [id]);
         res.status(200).json(result);
-        console.log(result)
     } catch (error) {
         console.error(error);
-        res.status(500).send({ message: "Error retrieving user's ticket details", error: error.message });
+        res.status(500).send({ message: "Error retrieving user's ticket details", error });
     }
 };
 
 const updateTicketDetails=async(req,res)=>{
     const {ticketcode}=req.params
     try{
-        const {customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture }=req.body
-        const sql='UPDATE ticketdetails SET customername=?, controllerno=?, state=?, district=?, village=?, block=?, faultcode=?, complainttype=?, details=?, picture=? WHERE ticketcode=?'
-        await db.query(sql,[customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,ticketcode])
+        const {customername, controllerno, state, district, village, block, faultcode, complainttype, details,status}=req.body
+        const picture=req.file?req.file.path:null;     
+        const sql='UPDATE ticketdetails SET customername=?, controllerno=?, state=?, district=?, village=?, block=?, faultcode=?, complainttype=?, details=?, picture=?, status=? WHERE ticketcode=?'
+        await db.query(sql,[customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,status,ticketcode])
         res.status(200).send('ticket updated')
-
-
     }catch(error){
         res.status(400).send(error)
     }
@@ -92,4 +102,4 @@ const deleteTicketDetails=async(req,res)=>{
         res.status(400).send(error)
     }
 }
-module.exports = { postticket,getTicketDetails,updateTicketDetails ,deleteTicketDetails,getTicketUser};
+module.exports = { postticket,getTicketDetails,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload};

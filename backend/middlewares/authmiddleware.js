@@ -16,7 +16,7 @@ const verifyToken=(req,res,next)=>{
     try{
         const decode=jwt.verify(token,process.env.jwt_key)
         req.user=decode;
-        console.log("token decode",req.user)
+        // console.log("token decode",req.user)
         next()
     }catch(error){
         res.status(400).send(error)
