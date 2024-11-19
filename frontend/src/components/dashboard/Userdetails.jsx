@@ -23,7 +23,7 @@ const Userdetails = () => {
 
   useEffect(() => {
     fetchUserDta();
-  }, [role]);
+  }, []);
 
   const handleSearch = (e) => {
     const value = e.target.value;
@@ -40,6 +40,7 @@ const Userdetails = () => {
     try{
         const response=await axios.delete(`http://localhost:8080/api/deleteuser/${id}`)
         console.log(response.data,"is deleted")
+        fetchUserDta()
     }catch(error){
         console.log(error)
     }
@@ -50,30 +51,28 @@ const Userdetails = () => {
     try{
         const response=await axios.put(`http://localhost:8080/api/updateuser/${id}`,{role:newRole})
         console.log(response.data)
-
+        fetchUserDta()
     }catch(error){
         console.log(error)
     }
  }
 
 const columns = [
-    { name: "ID", sortable: true, selector: (row) => row.id, className: 'column-id' },
+    // { name: "ID", sortable: true, selector: (row) => row.id, className: 'column-id' },
     { name: "Name", selector: (row) => row.name, className: 'column-name' },
     { name: "Number", selector: (row) => row.phoneNo, style: { minWidth: '150px', textAlign: 'center' }, className: 'column-phoneNo' },
     { name: "Role", selector: (row) => row.role, sortable: true, className: 'column-role' },
-    { 
-      name: "Change_Role", 
+    { name: "Change_Role", 
       cell: (row) => (
         <div className="">
           {row.role === 'admin' ?  
-           <button className="btn btn-outline-success btn-sm" onClick={() => handleEdit(row.id,row.role)}>user</button> 
-            : <button className="btn btn-outline-primary btn-sm"  onClick={() => handleEdit(row.id,row.role)}>admin</button>
+           <button className="btn btn-outline-success btn-sm" onClick={() => handleEdit(row.id,row.role)}>User</button> 
+            : <button className="btn btn-outline-primary btn-sm"  onClick={() => handleEdit(row.id,row.role)}>Admin</button>
           }</div>)
     },
-    {
-        name:'Action',
+    {   name:'Action',
         cell:row=>(
-            <button className="btn text-danger btn-sm border-0" onClick={() => handleDelete(row.id)}>
+            <button className="btn btn-outline-danger btn-sm " onClick={() => handleDelete(row.id)}>
             <i className="fa-solid fa-trash"></i></button>)
     }
   ];
@@ -101,6 +100,9 @@ const columns = [
               data={filterData}
               columns={columns}
               pagination
+              highlightOnHover
+              pointerOnHover
+              noHeader
               
             ></DataTable>
           </div>

@@ -181,10 +181,10 @@ const Dashboard = () => {
 
       <div className="container mt-3">
         <div className="d-flex justify-content-between">
-          <h3 className="fw-bold">Tickets</h3>
+          <h3 className="fw-bold ">Tickets</h3>
           <button
             type="button"
-            class="btn btn-primary btn-sm"
+            class="btn btn-outline-primary btn-sm"
             data-bs-toggle="modal"
             data-bs-target="#exampleModal"
             data-bs-whatever="@mdo"
@@ -315,7 +315,7 @@ const Dashboard = () => {
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label htmlFor="customername" className="form-label">
-                      Customer Name: *
+                      Customer Name: <span className="text-danger">*</span> 
                     </label>
                     <input
                       type="text"
@@ -331,7 +331,7 @@ const Dashboard = () => {
                   </div>
                   <div className="col-md-6 mb-3">
                     <label htmlFor="controllerno" className="form-label">
-                      Controller No: *
+                      Controller No: <span className="text-danger">*</span> 
                     </label>
                     <input
                       type="text"
@@ -350,7 +350,7 @@ const Dashboard = () => {
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label htmlFor="state" className="form-label">
-                      State: *
+                      State: <span className="text-danger">*</span> 
                     </label>
                     <input
                       type="text"
@@ -366,7 +366,7 @@ const Dashboard = () => {
                   </div>
                   <div className="col-md-6 mb-3">
                     <label htmlFor="district" className="form-label">
-                      District: *
+                      District: <span className="text-danger">*</span> 
                     </label>
                     <input
                       type="text"
@@ -418,7 +418,7 @@ const Dashboard = () => {
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label htmlFor="complainttype" className="form-label">
-                      Complaint Type: *
+                      Complaint Type: <span className="text-danger">*</span> 
                     </label>
                     <select
                       className="form-select"
@@ -447,7 +447,7 @@ const Dashboard = () => {
                   </div>
                   <div className="col-md-6 mb-3">
                     <label htmlFor="faultcode" className="form-label">
-                      Fault Code: *
+                      Fault Code: <span className="text-danger">*</span> 
                     </label>
                     <input
                       type="text"
@@ -510,8 +510,6 @@ const Dashboard = () => {
                 </> :""}
 
               
-
-                
 
                 <div className="modal-footer">
                   <button
@@ -609,16 +607,26 @@ const Dashboard = () => {
                   {editing ? editing.details : form.details}
                 </p>
 
-                
-                  <div className="mt-2">
-                    <strong>Picture:</strong>
-                    <img
-                      src={`http://localhost:8080/${form.picture}`}
-                      alt="Ticket Image"
-                      className="img-fluid mt-2"
-                      style={{ maxHeight: "300px", objectFit: "contain" }}
-                    />
-                  </div>
+                  
+  
+    <div className="mt-2">
+      <strong>Picture:</strong>
+      <div className="border rounded p-3 rounded-lg shadow-sm mx-auto" style={{ maxWidth: '400px' }}>
+        <img
+          src={`http://localhost:8080/${form.picture}`}
+          alt="  No image"
+          className="img-fluid mt-2"
+          style={{
+            maxHeight: '300px',
+            objectFit: 'contain',
+            borderRadius: '12px',
+            boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)', 
+          }}
+        />
+      </div>
+    </div>
+  
+                 
               </div>
             </div>
             <div className="modal-footer">
