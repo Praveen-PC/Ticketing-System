@@ -9,11 +9,20 @@ const Register = () => {
     const [name,setname]=useState('')
     const [phoneNo,setPhoneNo]=useState('')
     const [password,setPassword]=useState('')
+    const [error,setError]=useState({})
     const role='admin'
     const Navigate=useNavigate()
 
     const handleSubmit= async(e)=>{
         e.preventDefault();
+        const newerror={}
+        if(!name) newerror.name="Name Required"
+        if(!phoneNo) newerror.phoneNo="Phone Number  Required"
+        if(!password) newerror.password="Password  Required"
+        setError(newerror)
+        if(Object.keys(newerror).length>0){
+            return
+        }
         try{
             const response=await axios.post('http://localhost:8080/api/adduser',{name,phoneNo,password})
             console.log(response.data)
@@ -34,20 +43,23 @@ const Register = () => {
       <div className='container d-flex justify-content-center align-items-center vh-100 '>
         
     <form className='rounded shadow p-5 bg-light' onSubmit={handleSubmit}>
-        <h2 className='text-center'>Register</h2>
+        <h2 className='text-center text-primary '>Register</h2>
             <div className='mb-3'>
                 <label htmlFor="name" className='form-label'>Name</label>
-                <input className='form-control' type="text"  value={name} onChange={(e)=>setname(e.target.value)} required />
+                <input className='form-control' type="text"  value={name} onChange={(e)=>setname(e.target.value)}  />
+                {error.name && <div className='text-danger'><small>{error.name}</small></div> }
             </div>
             <div className='mb-3'>
                 <label htmlFor="phoneNo" className='form-label'>PhoneNo</label>
-                <input className='form-control' type="text" value={phoneNo}  onChange={(e)=>setPhoneNo(e.target.value)} required/>
+                <input className='form-control' type="text" value={phoneNo}  onChange={(e)=>setPhoneNo(e.target.value)} />
+                {error.phoneNo && <div className='text-danger'><small>{error.phoneNo}</small></div>}
             </div>
             <div className='mb-3'>
                 <label htmlFor="password" className='form-label'>Password</label>
-                <input className='form-control' type="password"  value={password} onChange={(e)=>setPassword(e.target.value)} required/>
+                <input className='form-control' type="password"  value={password} onChange={(e)=>setPassword(e.target.value)} />
+                {error.password && <div className='text-danger'><small>{error.password}</small></div>}
             </div>
-            <button className='btn btn-info'>Register</button>
+            <button className='btn btn-primary'>Register</button>
         </form>
     </div>
     </>
