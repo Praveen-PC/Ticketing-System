@@ -22,7 +22,7 @@ const Header = ({role}) => {
         <div className="d-flex justify-content-around">
           {userRole==='admin'?<Link to="/userdetails" className="btn  btn-outline-none border-0" ><i class="fa-solid fa-users"></i></Link>:" "} 
 
-          {!token ?" ":<button className="btn  border-0" onClick={handleLogout}><i class="fa-solid fa-right-from-bracket"></i></button>} 
+          {!token ? " ":<button className="btn  border-0" onClick={handleLogout}><i class="fa-solid fa-right-from-bracket"></i></button>} 
         
         </div>
         
