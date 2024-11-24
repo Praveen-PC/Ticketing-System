@@ -34,7 +34,7 @@ const upload=multer({storage:storage})
 
 
 const postticket = async (req, res) => {
-    const { customername, controllerno, state, district, village, block, faultcode, complainttype, details,user_id,status } = req.body;
+    const { customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details,user_id,status } = req.body;
     const picture = req.file ? req.file.path: null;
     try {
         const ticketcode = "TICK" + await autoTicketCode();
@@ -45,9 +45,12 @@ const postticket = async (req, res) => {
             isUnique=await checkUnique(ticketcode)
         }
 
-            const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            await db.query(sql, [ticketcode, customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,user_id,status]);
+            const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,user_id,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            await db.query(sql, [ticketcode, customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,user_id,status]);
+            const consql="Insert INTO conversation (tickcode,message,messageby,status) Values(?,?,?,?)"
+            await db.query(consql,[ticketcode,complainttype,user_id,status])
             return res.status(200).send({ message: 'Ticket inserted successfully', ticketcode });
+
        
     } catch (error) {
         console.log(error);
@@ -56,37 +59,55 @@ const postticket = async (req, res) => {
 };
 
 
-const getTicketDetails=async(req,res)=>{
-    try{
-        const sql="SELECT * FROM ticketdetails"
-        const [result]=await db.query(sql)
-        res.status(200).json(result)
-    }catch(error){
-        res.status(400).send(error)
-    }
-}
-
-
 
 const getTicketUser = async (req, res) => {
-    const id = req.user.id; 
+    const id = req.user.id;  
+    const userRole = req.user.role;  
+    const { ticketStatus } = req.query;  
+
+    console.log("Ticket Status:", ticketStatus);
+
+    let sql = "SELECT * FROM ticketdetails WHERE user_id = ?";
+    if (!ticketStatus) {
+        if (userRole === "admin") {
+            sql = "SELECT * FROM ticketdetails";  
+        } else {
+            sql = "SELECT * FROM ticketdetails WHERE user_id = ?";  
+        }
+    } else {
+        if (userRole === "admin") {
+            sql = "SELECT * FROM ticketdetails WHERE status = ?";
+        } else if (userRole === "user") {
+            sql = "SELECT * FROM ticketdetails WHERE user_id = ? AND status = ?";
+        }
+    }
+
     try {
-        const sql = 'SELECT * FROM ticketdetails WHERE  user_id=?'; 
-        const [result] = await db.query(sql, [id]);
+        let params;
+        if (userRole === "admin" && ticketStatus) {
+            params = [ticketStatus];  
+        } else if (userRole === "user" && ticketStatus) {
+            params = [id, ticketStatus];  
+        } else {
+            params = [id];  
+        }
+        const [result] = await db.query(sql, params);
         res.status(200).json(result);
     } catch (error) {
-        console.error(error);
-        res.status(500).send({ message: "Error retrieving user's ticket details", error });
+        console.error("Error retrieving ticket details:", error);
+        res.status(500).send({ message: "Error retrieving ticket details", error });
     }
 };
+
+
 
 const updateTicketDetails=async(req,res)=>{
     const {ticketcode}=req.params
     try{
-        const {customername, controllerno, state, district, village, block, faultcode, complainttype, details,status}=req.body
+        const {customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details,status}=req.body
         const picture=req.file?req.file.path:null;     
-        const sql='UPDATE ticketdetails SET customername=?, controllerno=?, state=?, district=?, village=?, block=?, faultcode=?, complainttype=?, details=?, picture=?, status=? WHERE ticketcode=?'
-        await db.query(sql,[customername, controllerno, state, district, village, block, faultcode, complainttype, details, picture,status,ticketcode])
+        const sql='UPDATE ticketdetails SET customername=?, controllerno=?,head=?,imei=?,hp=?,motortype=?, state=?, district=?, village=?, block=?, faultcode=?, complainttype=?, details=?, picture=?, status=? WHERE ticketcode=?'
+        await db.query(sql,[customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,status,ticketcode])
         res.status(200).send('ticket updated')
     }catch(error){
         res.status(400).send(error)
@@ -102,4 +123,31 @@ const deleteTicketDetails=async(req,res)=>{
         res.status(400).send(error)
     }
 }
-module.exports = { postticket,getTicketDetails,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload};
+
+
+const postMessage=async(req,res)=>{
+    const {ticketcode,message,messageby,status} =req.body
+    const sql="INSERT INTO conversation (tickcode,message,messageby,status) VALUES (?,?,?,?)"
+    try{
+        await db.query(sql,[ticketcode,message,messageby,status])
+        res.status(200).send("message send successfully")
+
+    }catch(error){
+        console.log(error)
+        res.status(400).send("error occurred while message")
+    }
+}
+
+const getMessage=async(req,res)=>{
+    const {ticketcode}=req.query
+    const sql="SELECT * FROM conversation WHERE tickcode=?"
+    try{
+        const [result]=await db.query(sql,[ticketcode])
+        res.status(200).send(result)
+
+    }catch(error){
+        console.log(error)
+        res.status(400).send("error while getting message")
+    }
+}
+module.exports = { postticket,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload,postMessage,getMessage};

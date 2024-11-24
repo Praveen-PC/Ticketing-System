@@ -1,3 +1,4 @@
+const con = require('../model/db')
 const db=require('../model/db')
 const bcrypt=require('bcrypt')
 
@@ -21,15 +22,54 @@ const postUser= async(req,res)=>{
         return res.status(400).send({error: error.message})
     }
 }
-const getUser=async(req,res)=>{
-    try{
-        const sql="SELECT * FROM userdetails"
-        const [result]=await db.query(sql)
-        res.status(200).send(result)
-    }catch(error){
-        res.status(400).send(error)
+// const getUser=async(req,res)=>{
+//     try{
+//         const sql="SELECT * FROM userdetails"
+//         const [result]=await db.query(sql) 
+//         const getUserId="SELECT id FROM userdetails"
+//          const [userID]=await db.query(getUserId)
+//          const ticketCount=[]
+//          for (let user of userID){
+//             const user_id=user.id
+//             const ticketPerUser="SELECT COUNT(*) AS ticketCount FROM ticketdetails WHERE user_id=? "
+//             const [ticketResult]=await db.query(ticketPerUser,[user_id])
+//             ticketCount.push({
+//                 ticketCount:ticketResult[0].ticketCount
+//             })
+//          }        
+//           res.status(200).send({result,ticketCount:ticketCount})
+//     }catch(error){
+//         res.status(400).send(error)
+//     }
+// }
+const getUser = async (req, res) => {
+    try {
+        const sql = "SELECT * FROM userdetails";
+        const [result] = await db.query(sql);
+
+        const ticketCount = [];
+
+        for (let user of result) {
+            const user_id = user.id;  
+            const ticketPerUser = "SELECT COUNT(*) AS ticketCount FROM ticketdetails WHERE user_id = ?";
+            const [ticketResult] = await db.query(ticketPerUser, [user_id]);
+            ticketCount.push({
+                user_id: user_id,
+                ticketCount: ticketResult[0].ticketCount 
+            });
+        }
+        const userWithTicketCount = result.map(user => {
+            const userTicket = ticketCount.find(ticket => ticket.user_id === user.id);
+            return { ...user, ticketCount: userTicket ? userTicket.ticketCount : 0 }
+        });
+
+        res.status(200).send(userWithTicketCount);
+      //  console.log(userWithTicketCount)
+    } catch (error) {
+        res.status(400).send(error);
     }
-}
+};
+
 
 const updateUser=async(req,res)=>{
     const {id}=req.params

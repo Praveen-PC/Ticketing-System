@@ -75,12 +75,13 @@ const Userdetails = () => {
     },
     {
       name: <h6 className="fw-bold ">Role</h6>,
-      selector: (row) => (
-        <p className={`fw-bold ${row.role === "admin" ? "text-primary" : ""}`}>
-          {row.role}
-        </p>
-      ),
+      selector: (row) => (<p className={`fw-bold ${row.role === "admin" ? "text-primary" : ""}`}>{row.role}</p> ),
       sortable: true,
+    },
+    {
+      name: <h6 className="fw-bold">Ticket</h6>,
+        selector: (row) => row.ticketCount, 
+        
     },
 
     {

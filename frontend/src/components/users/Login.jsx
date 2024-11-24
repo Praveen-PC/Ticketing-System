@@ -27,7 +27,8 @@ const Login = () => {
             const token=response.data.token
             console.log("JWT Token:", token);
             sessionStorage.setItem('authtoken', token)
-                navigate('/dashboard')
+              //  navigate('/dashboard')
+              navigate('/statusdashboard')
             reset()
         }catch(error){
             console.log(error)
