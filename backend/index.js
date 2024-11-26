@@ -4,11 +4,25 @@ const cors=require('cors')
 require('dotenv').config()
 const path=require('path')
 
+
 const registerRoutes=require('./routes/registerRouter')
 const loginRouter=require('./routes/loginRouter')
 const ticketRouter=require('./routes/ticketRouter')
 
+
 const app=express()
+
+// //new socket
+// const server=http.createServer(socketIo)
+// const io=socketIo(server)
+// io.on('connection',(socket)=>{
+//     console.log('a user is connected')
+
+//     socket.on('disconnect',()=>{
+//         console.log('user is desconnected')
+//     })
+
+// })
 
 app.use(cors({
     origin:'http://localhost:5173',
@@ -31,3 +45,4 @@ const PORT=process.env.PORT || 8080
 app.listen(PORT,()=>{
     console.log(`Server running on ${PORT}`)
 })
+

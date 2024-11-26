@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Header from "./Header";
 import axios from "axios";
-import { format } from "date-fns";
+import { format, formatRelative } from "date-fns";
 import { useParams } from "react-router-dom";
+import io from "socket.io-client";
 
 const Dashboard = () => {
   let { ticketStatus } = useParams();
@@ -19,28 +20,45 @@ const Dashboard = () => {
     status: "",
   });
 
+  const [notification,setNotification]=useState([])
+
   const fetchMessage = async () => {
     const ticketcode = messageDetails.ticketcode;
     if (!ticketcode) return;
     try {
-      const response = await axios.get("http://localhost:8080/api/message", {  params: { ticketcode },});
+      const response = await axios.get("http://localhost:8080/api/message", {
+        params: { ticketcode},
+      });
+
       setCoversation(response.data);
-      console.log(response.data);
+      console.log(response.data)
     } catch (error) {
       console.log(error);
     }
   };
+
   useEffect(() => {
     if (messageDetails.ticketcode) {
       fetchMessage();
     }
   }, [messageDetails.ticketcode]);
 
-  const handleMessageDetails = (value) => {
-    const { ticketcode, status } = value;
-    setMessageDetails({ ticketcode, status });
-    console.log(status);
-  };
+const handleMessageDetails = (value) => {
+  setMessageDetails(value); 
+  console.log(value)
+  const role=decodeToken()
+ const user_role=role.role==="admin"?'user':'admin'
+  axios.post("http://localhost:8080/api/message/markAsRead", { ticketcode: value.ticketcode, messageby: user_role })
+      .then(() => {
+          setNotification(prevNotifications => 
+              prevNotifications.filter(ticket => ticket !== value.ticketcode)
+          );
+      })
+      .catch((error) => {
+          console.error("Error marking message as read:", error);
+      });
+};
+
 
   const handleMessage = async (e) => {
     e.preventDefault();
@@ -50,7 +68,8 @@ const Dashboard = () => {
       messageby: role.role,
       status: messageDetails.status,
     };
-    console.log(formdata);
+    console.log("formdata",formdata)
+
     try {
       const response = await axios.post(
         "http://localhost:8080/api/addmessage",
@@ -131,16 +150,22 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
+    console.log(role.role)
     try {
-      const response = await axios.get(
-        "http://localhost:8080/api/getticket/user",
-        {
-          params: { ticketStatus },
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await axios.get("http://localhost:8080/api/getticket/user",{ params: { ticketStatus },headers: { Authorization: `Bearer ${token}` },});
       setdata(response.data.reverse());
       console.log(response);
+      const message=await axios.get("http://localhost:8080/api/allmessage")
+      const notSeenMessage=[]
+      message.data.forEach((msg) => {
+        if (role.role === "admin" && msg.isread === 0 && msg.messageby === "user") {
+            notSeenMessage.push(msg.tickcode);
+        } else if (role.role === "user" && msg.isread === 0 && msg.messageby === "admin") {
+            notSeenMessage.push(msg.tickcode);
+        }
+    });
+      setNotification(notSeenMessage)
+      console.log(notSeenMessage)
     } catch (error) {
       console.log(error);
     }
@@ -336,40 +361,40 @@ const Dashboard = () => {
               </div>
             ) : (
               records.map((value, id) => (
-                <div
-                  key={id}
-                  className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
-                >
-                  <div className="card shadow-sm h-100 rounded bg-light">
-                    <div className="card-body">
+                <div key={id} className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                  <div className="card shadow-sm h-100 rounded bg-light hover-shadow-lg ">
+                    <div className="card-body ">
                       <div className="d-flex justify-content-between">
-                        <h5 className="card-title text-primary mb-3 fw-bold">
-                          {value.ticketcode}
-                        </h5>
+                        <h5 className="card-title text-primary mb-3 fw-bold">{value.ticketcode}</h5>
+
                         <button
                           type="button"
                           className="btn btn-outline-0 border-0 text-center"
                           data-bs-toggle="modal"
                           data-bs-target="#model1"
                           style={{ marginTop: "-7px" }}
-                          onClick={() => handleMessageDetails(value)}
-                        >
-                          <h5 className="fw-bold text-danger">
-                            {" "}
-                            <i class="fa-regular fa-message"></i>
-                          </h5>
+                          onClick={() => handleMessageDetails(value)}>
+                          <h5 className="fw-bold text-primary">{" "}<i class="fa-regular fa-message"></i></h5>
                         </button>
 
+
                         {value.status === "open" ? (
-                          <h6 className="card-title text-primary mb-3 fw-bold text-success ">
-                            {value.status}
-                          </h6>
+                          <h6 className="card-title text-primary mb-3 fw-bold text-success "> {value.status} </h6>
                         ) : (
-                          <h6 className="card-title text-primary mb-3 fw-bold text-danger">
-                            {value.status}{" "}
-                          </h6>
+                          <h6 className="card-title text-primary mb-3 fw-bold text-danger">  {value.status}{" "}</h6>
                         )}
                       </div>
+
+                      {notification.includes(value.ticketcode) && (
+  <div className="badge text-white bg-danger mb-3 py-1 px-3 rounded">
+    New Message
+  </div>
+)}
+
+
+                      
+                
+
                       <p className="card-text">
                         <strong>Customer Name:</strong> {value.customername}
                       </p>
@@ -441,7 +466,7 @@ const Dashboard = () => {
         aria-labelledby="exampleModalLabel"
         aria-hidden="true"
       >
-        <div className="modal-dialog modal-lg">
+        <div className="modal-dialog  modal-dialog-scrollable modal-lg">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title fw-bold " id="exampleModalLabel">
@@ -951,7 +976,6 @@ const Dashboard = () => {
                 aria-label="Close"
               ></button>
             </div>
-
             <div
               style={{
                 maxHeight: "500px",
@@ -974,7 +998,6 @@ const Dashboard = () => {
                     style={{
                       backgroundColor:
                         value.messageby === "admin" ? "#CFD8DC" : "#009688",
-
                       color: value.messageby === "admin" ? "#000" : "#fff",
                       padding: "10px",
                       borderRadius: "15px",
@@ -983,7 +1006,8 @@ const Dashboard = () => {
                     }}
                   >
                     <p style={{ margin: "0", fontSize: "14px" }}>
-                      {value.message}
+                      {" "}
+                      {value.message}{" "}
                     </p>
                   </div>
                 </div>

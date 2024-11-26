@@ -1,0 +1,29 @@
+ if (currentMessageLength > previousMessageLength) {
+      // Set new message length for the ticket
+      setTicketMessageLengths(prevState => ({
+        ...prevState,
+        [ticketcode]: currentMessageLength,
+      }));
+
+      // Show notification for new message based on sender (admin/user)
+      const lastMessage = response.data[response.data.length - 1];
+      if (lastMessage.messageby === 'user') {
+        // If message is from user, notify admin
+        setTicketNotifications(prevState => ({
+          ...prevState,
+          [ticketcode]: 'New message from user for this ticket!',
+        }));
+      } else if (lastMessage.messageby === 'admin') {
+        // If message is from admin, notify user
+        setTicketNotifications(prevState => ({
+          ...prevState,
+          [ticketcode]: 'New message from admin for this ticket!',
+        }));
+      }
+    } else {
+      // Ensure message length is updated even if no new message
+      setTicketMessageLengths(prevState => ({
+        ...prevState,
+        [ticketcode]: currentMessageLength,
+      }));
+

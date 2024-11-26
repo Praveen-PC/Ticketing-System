@@ -2,6 +2,7 @@ const db = require('../model/db');
 const multer=require('multer')
 const path=require('path')
 
+
 const autoTicketCode = async () => {
     try {
         const randomticket=Math.floor(Math.random()*100000).toString().padStart(5,'0')
@@ -47,8 +48,8 @@ const postticket = async (req, res) => {
 
             const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,user_id,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             await db.query(sql, [ticketcode, customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,user_id,status]);
-            const consql="Insert INTO conversation (tickcode,message,messageby,status) Values(?,?,?,?)"
-            await db.query(consql,[ticketcode,complainttype,user_id,status])
+            const consql="Insert INTO conversation (tickcode,message,messageby,status,isread) Values(?,?,?,?,?)"
+            await db.query(consql,[ticketcode,complainttype,user_id,status,0])
             return res.status(200).send({ message: 'Ticket inserted successfully', ticketcode });
 
        
@@ -127,27 +128,64 @@ const deleteTicketDetails=async(req,res)=>{
 
 const postMessage=async(req,res)=>{
     const {ticketcode,message,messageby,status} =req.body
-    const sql="INSERT INTO conversation (tickcode,message,messageby,status) VALUES (?,?,?,?)"
+    const sql="INSERT INTO conversation (tickcode,message,messageby,status,isread) VALUES (?,?,?,?,?)"
     try{
-        await db.query(sql,[ticketcode,message,messageby,status])
+        await db.query(sql,[ticketcode,message,messageby,status,0])
         res.status(200).send("message send successfully")
-
     }catch(error){
         console.log(error)
         res.status(400).send("error occurred while message")
     }
 }
 
-const getMessage=async(req,res)=>{
-    const {ticketcode}=req.query
-    const sql="SELECT * FROM conversation WHERE tickcode=?"
-    try{
-        const [result]=await db.query(sql,[ticketcode])
-        res.status(200).send(result)
 
-    }catch(error){
-        console.log(error)
-        res.status(400).send("error while getting message")
+
+const getMessage = async (req, res) => {
+    const { ticketcode } = req.query;
+    const sql="SELECT * FROM conversation WHERE tickcode=?"
+    try {
+        const [result]=await db.query(sql,[ticketcode])
+        res.status(200).send(result);
+
+        // const updatemessage='UPDATE conversation SET isread=1 WHERE tickcode=?'
+        // await db.query(updatemessage,[ticketcode])
+    } catch (error) {
+        console.log(error);
+        res.status(400).send("Error while getting message");
     }
-}
-module.exports = { postticket,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload,postMessage,getMessage};
+};
+
+
+const getAllMessage = async (req, res) => {
+    const { ticketcode } = req.query;
+    const sql="SELECT * FROM conversation "
+    try {
+        const [result]=await db.query(sql,[ticketcode])
+        res.status(200).send(result);
+    } catch (error) {
+        console.log(error);
+        res.status(400).send("Error while getting message");
+    }
+};
+
+
+
+const markMessageAsRead = async (req, res) => {
+    const { ticketcode, messageby } = req.body;  // Get ticketcode and who sent the message
+    const sql = "UPDATE conversation SET isread = 1 WHERE tickcode = ? AND messageby = ?";
+    
+    try {
+        // Update the message as read for the sender (admin or user)
+        await db.query(sql, [ticketcode, messageby]);
+        res.status(200).send("Message marked as read");
+    } catch (error) {
+        console.log(error);
+        res.status(400).send("Error marking message as read");
+    }
+};
+
+
+
+
+
+module.exports = { postticket,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload,postMessage,getMessage,getAllMessage,markMessageAsRead};

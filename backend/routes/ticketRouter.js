@@ -14,5 +14,7 @@ router.delete('/deleteticket/:ticketcode',ticketController.deleteTicketDetails)
 
 router.post('/addmessage',ticketController.postMessage)
 router.get('/message',ticketController.getMessage)
+router.get('/allmessage',ticketController.getAllMessage)
+router.post('/message/markAsRead',ticketController.markMessageAsRead)
 
 module.exports=router
