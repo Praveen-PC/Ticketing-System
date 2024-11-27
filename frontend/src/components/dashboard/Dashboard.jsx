@@ -3,7 +3,6 @@ import Header from "./Header";
 import axios from "axios";
 import { format, formatRelative } from "date-fns";
 import { useParams } from "react-router-dom";
-import io from "socket.io-client";
 
 const Dashboard = () => {
   let { ticketStatus } = useParams();
@@ -14,74 +13,6 @@ const Dashboard = () => {
   const [filterData, setFilterdata] = useState([]);
   const [message, setMessage] = useState("");
   const [conversation, setCoversation] = useState([]);
-
-  const [messageDetails, setMessageDetails] = useState({
-    ticketcode: "",
-    status: "",
-  });
-
-  const [notification,setNotification]=useState([])
-
-  const fetchMessage = async () => {
-    const ticketcode = messageDetails.ticketcode;
-    if (!ticketcode) return;
-    try {
-      const response = await axios.get("http://localhost:8080/api/message", {
-        params: { ticketcode},
-      });
-
-      setCoversation(response.data);
-      console.log(response.data)
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    if (messageDetails.ticketcode) {
-      fetchMessage();
-    }
-  }, [messageDetails.ticketcode]);
-
-const handleMessageDetails = (value) => {
-  setMessageDetails(value); 
-  console.log(value)
-  const role=decodeToken()
- const user_role=role.role==="admin"?'user':'admin'
-  axios.post("http://localhost:8080/api/message/markAsRead", { ticketcode: value.ticketcode, messageby: user_role })
-      .then(() => {
-          setNotification(prevNotifications => 
-              prevNotifications.filter(ticket => ticket !== value.ticketcode)
-          );
-      })
-      .catch((error) => {
-          console.error("Error marking message as read:", error);
-      });
-};
-
-
-  const handleMessage = async (e) => {
-    e.preventDefault();
-    const formdata = {
-      ticketcode: messageDetails.ticketcode,
-      message: message,
-      messageby: role.role,
-      status: messageDetails.status,
-    };
-    console.log("formdata",formdata)
-
-    try {
-      const response = await axios.post(
-        "http://localhost:8080/api/addmessage",
-        formdata
-      );
-      setMessage("");
-      fetchMessage();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const [form, setform] = useState({
     customername: "",
     controllerno: "",
@@ -99,37 +30,98 @@ const handleMessageDetails = (value) => {
     picture: null,
     status: "open",
   });
+  const [messageDetails, setMessageDetails] = useState({
+    ticketcode: "",
+    status: "",
+  });
+  const [notification, setNotification] = useState([]);
+  
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordPerPage = 8;
-  const datatoPaginate = filterData.length > 0 ? filterData : data;
-  const lastIndex = currentPage * recordPerPage;
-  const firstIndex = lastIndex - recordPerPage;
-  const records = datatoPaginate.slice(firstIndex, lastIndex);
-  const nPage = Math.ceil(datatoPaginate.length / recordPerPage);
-  const pageLimit = 3;
-  const pageStart = Math.floor((currentPage - 1) / pageLimit) * pageLimit + 1;
-  const pageEnd = Math.min(pageStart + pageLimit - 1, nPage);
+const checkduplicate=notification.filter((value,index)=>notification.indexOf(value)===index)
+ 
 
-  const pageNumber = [];
-  for (let i = pageStart; i <= pageEnd; i++) {
-    pageNumber.push(i);
-  }
-  const prePage = () => {
-    if (currentPage !== 1) {
-      setCurrentPage(currentPage - 1);
+ // get all message for particular ticket
+  const fetchMessage = async () => {
+    const ticketcode = messageDetails.ticketcode;
+    if (!ticketcode) return;
+    try {
+      const response = await axios.get("http://localhost:8080/api/message", {
+        params: { ticketcode },
+      });
+      setCoversation(response.data);
+      console.log(response.data);
+    } catch (error) {
+      console.log(error);
     }
   };
-  const changeCurrentPage = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  useEffect(() => {
+    if (messageDetails.ticketcode) {
+      fetchMessage();
+    }
+  }, [messageDetails.ticketcode]);
 
-  const nextPage = () => {
-    if (currentPage !== nPage) {
-      setCurrentPage(currentPage + 1);
+
+ // ticket details and update message after seen
+  const handleMessageDetails = (value) => {
+    setMessageDetails(value);
+    console.log(value);
+    const role = decodeToken();
+    const user_role = role.role === "admin" ? "user" : "admin";
+
+    axios.post("http://localhost:8080/api/message/markAsRead", {
+        ticketcode: value.ticketcode,
+        messageby: user_role,
+      })
+      .then(() => {
+        setNotification((prevNotifications) =>
+          prevNotifications.filter((ticket) => ticket !== value.ticketcode)
+        );
+      })
+      .catch((error) => {
+        console.error("Error marking message as read:", error);
+      })
+      
+     
+  };  
+
+
+   //send new message to particular ticket
+  const handleMessage = async (e) => {
+    e.preventDefault();
+    const formdata = {
+      ticketcode: messageDetails.ticketcode,
+      message: message,
+      messageby: role.role,
+      status: messageDetails.status,
+    };
+    console.log("formdata", formdata);
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/addmessage",
+        formdata
+      );
+      setMessage("");
+      fetchMessage();
+    } catch (error) {
+      console.log(error);
     }
   };
+  
 
+  // filter an ticket with new message
+  const handleMessageFilter = (e) => {
+    e.preventDefault();
+    const ticketsWithNewMessages = records.filter((ticket) =>
+      notification.includes(ticket.ticketcode)
+    );
+    setFilterdata(ticketsWithNewMessages); 
+
+    console.log("Tickets with new messages: ", ticketsWithNewMessages);
+  };
+
+
+
+  //  decode token to Find role (admin or user)
   const decodeToken = () => {
     const token = sessionStorage.getItem("authtoken");
     if (!token && !token.startsWith("Bearer ")) {
@@ -148,33 +140,51 @@ const handleMessageDetails = (value) => {
   };
   const role = decodeToken();
 
+
+// to fetch all tickets (admin - all ticketdetails,user - their own ticketDetails)
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
-    console.log(role.role)
     try {
-      const response = await axios.get("http://localhost:8080/api/getticket/user",{ params: { ticketStatus },headers: { Authorization: `Bearer ${token}` },});
+      const response = await axios.get(
+        "http://localhost:8080/api/getticket/user",
+        {
+          params: { ticketStatus },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setdata(response.data.reverse());
       console.log(response);
-      const message=await axios.get("http://localhost:8080/api/allmessage")
-      const notSeenMessage=[]
+
+      //  fetch all message and find unread message 
+      const message = await axios.get("http://localhost:8080/api/allmessage");
+      const notSeenMessage = [];
       message.data.forEach((msg) => {
-        if (role.role === "admin" && msg.isread === 0 && msg.messageby === "user") {
-            notSeenMessage.push(msg.tickcode);
-        } else if (role.role === "user" && msg.isread === 0 && msg.messageby === "admin") {
-            notSeenMessage.push(msg.tickcode);
+        if (
+          role.role === "admin" &&
+          msg.isread === 0 &&
+          msg.messageby === "user"
+        ) {
+          notSeenMessage.push(msg.tickcode);
+        } else if (
+          role.role === "user" &&
+          msg.isread === 0 &&
+          msg.messageby === "admin"
+        ) {
+          notSeenMessage.push(msg.tickcode);
         }
-    });
-      setNotification(notSeenMessage)
-      console.log(notSeenMessage)
+      });
+      setNotification(notSeenMessage);
+      console.log("not seen message :",notSeenMessage);
     } catch (error) {
       console.log(error);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, [form]);
 
+
+   //   edit ticket
   const handleEdit = (value) => {
     setform({
       customername: value.customername,
@@ -196,6 +206,7 @@ const handleMessageDetails = (value) => {
     setEditing(value);
   };
 
+   //   submit an ticket form
   const handleSubmit = async (e) => {
     e.preventDefault();
     const decode = await decodeToken();
@@ -217,7 +228,8 @@ const handleMessageDetails = (value) => {
       console.log(error);
     }
   };
-
+   
+  //    delete ticket
   const handleDelete = async (ticketcode) => {
     try {
       const response = await axios.delete(
@@ -261,9 +273,41 @@ const handleMessageDetails = (value) => {
     setEditing(null);
   };
 
+   //    pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordPerPage = 8;
+  const datatoPaginate = filterData.length > 0 ? filterData : data;
+  const lastIndex = currentPage * recordPerPage;
+  const firstIndex = lastIndex - recordPerPage;
+  const records = datatoPaginate.slice(firstIndex, lastIndex);
+  const nPage = Math.ceil(datatoPaginate.length / recordPerPage);
+  const pageLimit = 3;
+  const pageStart = Math.floor((currentPage - 1) / pageLimit) * pageLimit + 1;
+  const pageEnd = Math.min(pageStart + pageLimit - 1, nPage);
+
+  const pageNumber = [];
+  for (let i = pageStart; i <= pageEnd; i++) {
+    pageNumber.push(i);
+  }
+  const prePage = () => {
+    if (currentPage !== 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+  const changeCurrentPage = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const nextPage = () => {
+    if (currentPage !== nPage) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+
   return (
     <>
-      <Header />
+      <Header handleMessageFilter={handleMessageFilter} newMessage={checkduplicate}/>
 
       <div className="container mt-3">
         {ticketStatus === "close" ? (
@@ -329,7 +373,7 @@ const handleMessageDetails = (value) => {
                             }}
                             className="page-link"
                           >
-                            {n}
+                            {n}{" "}
                           </a>
                         </li>
                       ))}
@@ -361,11 +405,16 @@ const handleMessageDetails = (value) => {
               </div>
             ) : (
               records.map((value, id) => (
-                <div key={id} className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                <div
+                  key={id}
+                  className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
+                >
                   <div className="card shadow-sm h-100 rounded bg-light hover-shadow-lg ">
                     <div className="card-body ">
                       <div className="d-flex justify-content-between">
-                        <h5 className="card-title text-primary mb-3 fw-bold">{value.ticketcode}</h5>
+                        <h5 className="card-title text-primary mb-3 fw-bold">
+                          {value.ticketcode}
+                        </h5>
 
                         <button
                           type="button"
@@ -373,27 +422,32 @@ const handleMessageDetails = (value) => {
                           data-bs-toggle="modal"
                           data-bs-target="#model1"
                           style={{ marginTop: "-7px" }}
-                          onClick={() => handleMessageDetails(value)}>
-                          <h5 className="fw-bold text-primary">{" "}<i class="fa-regular fa-message"></i></h5>
+                          onClick={() => handleMessageDetails(value)}
+                        >
+                          <h5 className="fw-bold text-primary">
+                            {" "}
+                            <i class="fa-regular fa-message"></i>
+                          </h5>
                         </button>
 
-
                         {value.status === "open" ? (
-                          <h6 className="card-title text-primary mb-3 fw-bold text-success "> {value.status} </h6>
+                          <h6 className="card-title text-primary mb-3 fw-bold text-success ">
+                            {" "}
+                            {value.status}{" "}
+                          </h6>
                         ) : (
-                          <h6 className="card-title text-primary mb-3 fw-bold text-danger">  {value.status}{" "}</h6>
+                          <h6 className="card-title text-primary mb-3 fw-bold text-danger">
+                            {" "}
+                            {value.status}{" "}
+                          </h6>
                         )}
                       </div>
 
                       {notification.includes(value.ticketcode) && (
-  <div className="badge text-white bg-danger mb-3 py-1 px-3 rounded">
-    New Message
-  </div>
-)}
-
-
-                      
-                
+                        <div className="badge text-white bg-danger mb-3 py-1 px-3 rounded">
+                          New Message
+                        </div>
+                      )}
 
                       <p className="card-text">
                         <strong>Customer Name:</strong> {value.customername}

@@ -146,9 +146,6 @@ const getMessage = async (req, res) => {
     try {
         const [result]=await db.query(sql,[ticketcode])
         res.status(200).send(result);
-
-        // const updatemessage='UPDATE conversation SET isread=1 WHERE tickcode=?'
-        // await db.query(updatemessage,[ticketcode])
     } catch (error) {
         console.log(error);
         res.status(400).send("Error while getting message");
@@ -171,11 +168,9 @@ const getAllMessage = async (req, res) => {
 
 
 const markMessageAsRead = async (req, res) => {
-    const { ticketcode, messageby } = req.body;  // Get ticketcode and who sent the message
+    const { ticketcode, messageby } = req.body; 
     const sql = "UPDATE conversation SET isread = 1 WHERE tickcode = ? AND messageby = ?";
-    
     try {
-        // Update the message as read for the sender (admin or user)
         await db.query(sql, [ticketcode, messageby]);
         res.status(200).send("Message marked as read");
     } catch (error) {

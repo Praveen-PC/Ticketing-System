@@ -46,17 +46,17 @@ const Register = () => {
         <h2 className='text-center text-primary '>Register</h2>
             <div className='mb-3'>
                 <label htmlFor="name" className='form-label'>Name</label>
-                <input className='form-control' type="text"  value={name} onChange={(e)=>setname(e.target.value)}  />
+                <input className='form-control' type="text"  value={name} onChange={(e)=>setname(e.target.value)} placeholder='Enter Full Name' />
                 {error.name && <div className='text-danger'><small>{error.name}</small></div> }
             </div>
             <div className='mb-3'>
                 <label htmlFor="phoneNo" className='form-label'>PhoneNo</label>
-                <input className='form-control' type="text" value={phoneNo}  onChange={(e)=>setPhoneNo(e.target.value)} />
+                <input className='form-control' type="text" value={phoneNo}  onChange={(e)=>setPhoneNo(e.target.value)} placeholder='Enter Phone No' />
                 {error.phoneNo && <div className='text-danger'><small>{error.phoneNo}</small></div>}
             </div>
             <div className='mb-3'>
                 <label htmlFor="password" className='form-label'>Password</label>
-                <input className='form-control' type="password"  value={password} onChange={(e)=>setPassword(e.target.value)} />
+                <input className='form-control' type="password"  value={password} onChange={(e)=>setPassword(e.target.value)} placeholder='Enter Password' />
                 {error.password && <div className='text-danger'><small>{error.password}</small></div>}
             </div>
             <button className='btn btn-primary'>Register</button>

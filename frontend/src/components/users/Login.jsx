@@ -27,7 +27,7 @@ const Login = () => {
             const token=response.data.token
             console.log("JWT Token:", token);
             sessionStorage.setItem('authtoken', token)
-              //  navigate('/dashboard')
+              // navigate('/dashboard')
               navigate('/statusdashboard')
             reset()
         }catch(error){
@@ -48,23 +48,20 @@ const Login = () => {
 
             <div className='mb-3'>
                 <label htmlFor="phoneNo" className='form-label'>PhoneNo</label>
-                <input type="text" className='form-control' value={phoneNo} onChange={(e)=>setPhoneNo(e.target.value)} />
+                <input type="text" className='form-control' value={phoneNo} onChange={(e)=>setPhoneNo(e.target.value)} placeholder='Enter Phone No'/>
                 {error.phoneNo && <div className='text-danger'><small>{error.phoneNo}</small></div>}
             </div>
            
             <div className='mb-3'>
                 <label htmlFor="password" className='form-label'>Password</label>
-                <input type="password" className='form-control' value={password} onChange={(e)=>setPassword(e.target.value)} />
+                <input type="password" className='form-control' value={password} onChange={(e)=>setPassword(e.target.value)} placeholder='Enter Password' />
                 {error.password && <div className='text-danger'><small>{error.password}</small></div>}
             </div>
             <div className='d-flex justify-content-between'>
             <button  className='btn-primary btn '>Submit</button>
             <Link to='/register' style={{textDecoration:'none'}} className='mt-1'>Register_Now?</Link>
-          
             </div>
             <div className='text-danger mt-2'>{finalError}</div>
-            
-
         </form>
     </div>
     </>
