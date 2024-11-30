@@ -10,6 +10,7 @@ router.post('/addticket',ticketController.upload.single('picture'),ticketControl
 router.get('/getticket/user',verifyToken,ticketController.getTicketUser)
 router.put('/updateticket/:ticketcode',ticketController.upload.single('picture'),ticketController.updateTicketDetails)
 router.delete('/deleteticket/:ticketcode',ticketController.deleteTicketDetails)
+router.put('/closeticket/:ticketcode',ticketController.updateCloseTicket)
 
 
 router.post('/addmessage',ticketController.postMessage)

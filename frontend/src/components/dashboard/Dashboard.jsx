@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Header from "./Header";
 import axios from "axios";
-import { format, formatRelative } from "date-fns";
+import {
+  differenceInDays,
+  differenceInMinutes,
+  format,
+  formatRelative,
+} from "date-fns";
 import { useParams } from "react-router-dom";
 
 const Dashboard = () => {
@@ -33,14 +38,16 @@ const Dashboard = () => {
   const [messageDetails, setMessageDetails] = useState({
     ticketcode: "",
     status: "",
+    user_id: " ",
   });
   const [notification, setNotification] = useState([]);
-  
+  const [closeTicket, setCloseTicket] = useState("open");
 
-const checkduplicate=notification.filter((value,index)=>notification.indexOf(value)===index)
- 
+  const checkduplicate = notification.filter(
+    (value, index) => notification.indexOf(value) === index
+  );
 
- // get all message for particular ticket
+  // get all message for particular ticket
   const fetchMessage = async () => {
     const ticketcode = messageDetails.ticketcode;
     if (!ticketcode) return;
@@ -48,6 +55,23 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
       const response = await axios.get("http://localhost:8080/api/message", {
         params: { ticketcode },
       });
+      const totalMessage = response.data.length;
+      if (totalMessage > 0) {
+        const lastMessage = response.data[totalMessage - 1];
+        const lastMessageTime = new Date(lastMessage.created_at);
+        const currentTime = new Date();
+
+        const lastMessageBy = lastMessage.messageby === "admin";
+        const dayDiffernce = differenceInMinutes(currentTime, lastMessageTime);
+        if (lastMessageBy && dayDiffernce > 1) {
+          setCloseTicket("closed");
+          console.log("closed : ", ticketcode);
+          await axios.put(
+            `http://localhost:8080/api/closeticket/${ticketcode}`
+          );
+        }
+      }
+
       setCoversation(response.data);
       console.log(response.data);
     } catch (error) {
@@ -60,15 +84,15 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
     }
   }, [messageDetails.ticketcode]);
 
-
- // ticket details and update message after seen
+  // ticket details and update message after seen
   const handleMessageDetails = (value) => {
     setMessageDetails(value);
-    console.log(value);
+    console.log("message deatils:", value.user_id);
     const role = decodeToken();
     const user_role = role.role === "admin" ? "user" : "admin";
 
-    axios.post("http://localhost:8080/api/message/markAsRead", {
+    axios
+      .post("http://localhost:8080/api/message/markAsRead", {
         ticketcode: value.ticketcode,
         messageby: user_role,
       })
@@ -79,20 +103,19 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
       })
       .catch((error) => {
         console.error("Error marking message as read:", error);
-      })
-      
-     
-  };  
+      });
+  };
 
-
-   //send new message to particular ticket
+  //send new message to particular ticket
   const handleMessage = async (e) => {
     e.preventDefault();
+    const role = decodeToken();
     const formdata = {
       ticketcode: messageDetails.ticketcode,
       message: message,
       messageby: role.role,
       status: messageDetails.status,
+      user_id: messageDetails.user_id,
     };
     console.log("formdata", formdata);
     try {
@@ -106,7 +129,6 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
       console.log(error);
     }
   };
-  
 
   // filter an ticket with new message
   const handleMessageFilter = (e) => {
@@ -114,12 +136,10 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
     const ticketsWithNewMessages = records.filter((ticket) =>
       notification.includes(ticket.ticketcode)
     );
-    setFilterdata(ticketsWithNewMessages); 
+    setFilterdata(ticketsWithNewMessages);
 
     console.log("Tickets with new messages: ", ticketsWithNewMessages);
   };
-
-
 
   //  decode token to Find role (admin or user)
   const decodeToken = () => {
@@ -140,8 +160,7 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
   };
   const role = decodeToken();
 
-
-// to fetch all tickets (admin - all ticketdetails,user - their own ticketDetails)
+  // to fetch all tickets (admin - all ticketdetails,user - their own ticketDetails)
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
     try {
@@ -155,9 +174,10 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
       setdata(response.data.reverse());
       console.log(response);
 
-      //  fetch all message and find unread message 
+      //  fetch all message and find unread message
       const message = await axios.get("http://localhost:8080/api/allmessage");
       const notSeenMessage = [];
+      console.log(role.id);
       message.data.forEach((msg) => {
         if (
           role.role === "admin" &&
@@ -168,13 +188,14 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
         } else if (
           role.role === "user" &&
           msg.isread === 0 &&
-          msg.messageby === "admin"
+          msg.messageby === "admin" &&
+          msg.user_id === role.id
         ) {
           notSeenMessage.push(msg.tickcode);
         }
       });
       setNotification(notSeenMessage);
-      console.log("not seen message :",notSeenMessage);
+      console.log("not seen message :", notSeenMessage);
     } catch (error) {
       console.log(error);
     }
@@ -183,8 +204,7 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
     fetchData();
   }, [form]);
 
-
-   //   edit ticket
+  //   edit ticket
   const handleEdit = (value) => {
     setform({
       customername: value.customername,
@@ -206,7 +226,7 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
     setEditing(value);
   };
 
-   //   submit an ticket form
+  //   submit an ticket form
   const handleSubmit = async (e) => {
     e.preventDefault();
     const decode = await decodeToken();
@@ -228,7 +248,7 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
       console.log(error);
     }
   };
-   
+
   //    delete ticket
   const handleDelete = async (ticketcode) => {
     try {
@@ -273,7 +293,7 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
     setEditing(null);
   };
 
-   //    pagination
+  //    pagination
   const [currentPage, setCurrentPage] = useState(1);
   const recordPerPage = 8;
   const datatoPaginate = filterData.length > 0 ? filterData : data;
@@ -304,10 +324,12 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
     }
   };
 
-
   return (
     <>
-      <Header handleMessageFilter={handleMessageFilter} newMessage={checkduplicate}/>
+      <Header
+        handleMessageFilter={handleMessageFilter}
+        newMessage={checkduplicate}
+      />
 
       <div className="container mt-3">
         {ticketStatus === "close" ? (
@@ -1061,11 +1083,28 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
                   >
                     <p style={{ margin: "0", fontSize: "14px" }}>
                       {" "}
-                      {value.message}{" "}
+                      {value.message} <br />
+                      <small>
+                        {format(new Date(value.created_at), "hh:mm")}{" "}
+                        {format(new Date(value.created_at), "a")}
+                      </small>
                     </p>
                   </div>
                 </div>
               ))}
+
+              
+              {closeTicket === "closed" && (
+                <div className=" text-center p-2 border rounded shadow-lg bg-light">
+                  <h4 className="text-danger fw-bold mb-3">
+                    <i className="bi bi-x-circle"></i> Ticket Closed
+                  </h4>
+                  <p className="text-muted mb-4">
+                    This ticket has been closed due to inactivity. Please
+                    contact support if you need further assistance.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div class="modal-footer ">
@@ -1078,11 +1117,13 @@ const checkduplicate=notification.filter((value,index)=>notification.indexOf(val
                   name="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  disabled={closeTicket === "closed"}
                 />
                 <button
                   className="btn btn-success"
                   type="button"
                   onClick={handleMessage}
+                  disabled={closeTicket === "closed"}
                 >
                   <i class="fa-solid fa-paper-plane"></i>
                 </button>

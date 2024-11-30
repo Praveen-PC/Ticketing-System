@@ -65,10 +65,12 @@ const getTicketUser = async (req, res) => {
     const id = req.user.id;  
     const userRole = req.user.role;  
     const { ticketStatus } = req.query;  
-
+ 
     console.log("Ticket Status:", ticketStatus);
 
     let sql = "SELECT * FROM ticketdetails WHERE user_id = ?";
+   // let user_sql='SELECT * FROM userdetails WHERE id=?'
+    
     if (!ticketStatus) {
         if (userRole === "admin") {
             sql = "SELECT * FROM ticketdetails";  
@@ -93,6 +95,8 @@ const getTicketUser = async (req, res) => {
             params = [id];  
         }
         const [result] = await db.query(sql, params);
+      //  const [userdeatils]=await db.query(user_sql,[id])
+       //console.log(userdeatils,result)
         res.status(200).json(result);
     } catch (error) {
         console.error("Error retrieving ticket details:", error);
@@ -114,6 +118,24 @@ const updateTicketDetails=async(req,res)=>{
         res.status(400).send(error)
     }
 }
+
+const updateCloseTicket = async (req, res) => {
+    const { ticketcode } = req.params; 
+    const sql = 'UPDATE ticketdetails SET status=? WHERE ticketcode=?'; 
+    
+    try {
+      const [result] = await db.query(sql, ['close', ticketcode]); 
+      
+      if (result.affectedRows === 0) {
+        return res.status(404).send(`Ticket with ticketcode ${ticketcode} not found`);
+      }  
+      res.status(200).send(`Ticket ${ticketcode} is closed successfully`);
+    } catch (error) {
+      console.log(error);
+      res.status(500).send(`Error while closing the ticket: ${error.message}`);
+    }
+  };
+  
 const deleteTicketDetails=async(req,res)=>{
     const {ticketcode}=req.params
     try{
@@ -127,10 +149,10 @@ const deleteTicketDetails=async(req,res)=>{
 
 
 const postMessage=async(req,res)=>{
-    const {ticketcode,message,messageby,status} =req.body
-    const sql="INSERT INTO conversation (tickcode,message,messageby,status,isread) VALUES (?,?,?,?,?)"
-    try{
-        await db.query(sql,[ticketcode,message,messageby,status,0])
+    const {ticketcode,message,messageby,status,user_id} =req.body
+    const sql="INSERT INTO conversation (tickcode,message,messageby,status,isread,user_id) VALUES (?,?,?,?,?,?)"
+        try{
+        await db.query(sql,[ticketcode,message,messageby,status,0,user_id])
         res.status(200).send("message send successfully")
     }catch(error){
         console.log(error)
@@ -183,4 +205,5 @@ const markMessageAsRead = async (req, res) => {
 
 
 
-module.exports = { postticket,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload,postMessage,getMessage,getAllMessage,markMessageAsRead};
+module.exports = { postticket,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload,postMessage,getMessage,getAllMessage,
+    markMessageAsRead,updateCloseTicket};
