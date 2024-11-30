@@ -62,7 +62,7 @@ const Dashboard = () => {
         const currentTime = new Date();
 
         const lastMessageBy = lastMessage.messageby === "admin";
-        const dayDiffernce = differenceInMinutes(currentTime, lastMessageTime);
+        const dayDiffernce = differenceInDays(currentTime, lastMessageTime);
         if (lastMessageBy && dayDiffernce > 1) {
           setCloseTicket("closed");
           console.log("closed : ", ticketcode);
