@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "./Header";
 import axios from "axios";
+
 import {
   differenceInDays,
   differenceInMinutes,
@@ -10,6 +11,9 @@ import {
 import { useParams } from "react-router-dom";
 
 const Dashboard = () => {
+  const API_URL = import.meta.env.VITE_APP_URL
+ 
+  
   let { ticketStatus } = useParams();
   console.log(ticketStatus);
   const [data, setdata] = useState([]);
@@ -52,7 +56,8 @@ const Dashboard = () => {
     const ticketcode = messageDetails.ticketcode;
     if (!ticketcode) return;
     try {
-      const response = await axios.get("http://localhost:8080/api/message", {
+      // const response = await axios.get("http://localhost:8080/api/message", {
+        const response = await axios.get(`${API_URL}/api/message`, {
         params: { ticketcode },
       });
       const totalMessage = response.data.length;
@@ -66,8 +71,11 @@ const Dashboard = () => {
         if (lastMessageBy && dayDiffernce > 1) {
           setCloseTicket("closed");
           console.log("closed : ", ticketcode);
+          // await axios.put(
+          //   `http://localhost:8080/api/closeticket/${ticketcode}`
+          // );
           await axios.put(
-            `http://localhost:8080/api/closeticket/${ticketcode}`
+            `${API_URL}/api/closeticket/${ticketcode}`
           );
         }
       }
@@ -90,9 +98,14 @@ const Dashboard = () => {
     console.log("message deatils:", value.user_id);
     const role = decodeToken();
     const user_role = role.role === "admin" ? "user" : "admin";
+    // axios
+    // .post(`http://localhost:8080/api/message/markAsRead`, {
+    //   ticketcode: value.ticketcode,
+    //   messageby: user_role,
+    // })
 
     axios
-      .post("http://localhost:8080/api/message/markAsRead", {
+      .post(`${API_URL}/api/message/markAsRead`, {
         ticketcode: value.ticketcode,
         messageby: user_role,
       })
@@ -119,10 +132,8 @@ const Dashboard = () => {
     };
     console.log("formdata", formdata);
     try {
-      const response = await axios.post(
-        "http://localhost:8080/api/addmessage",
-        formdata
-      );
+    //   const response = await axios.post("http://localhost:8080/api/addmessage",formdata);
+      const response = await axios.post(`${API_URL}/api/addmessage`,formdata);
       setMessage("");
       fetchMessage();
     } catch (error) {
@@ -164,8 +175,8 @@ const Dashboard = () => {
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
     try {
-      const response = await axios.get(
-        "http://localhost:8080/api/getticket/user",
+   //    const response = await axios.get( "http://localhost:8080/api/getticket/user",
+       const response = await axios.get( `${API_URL}/api/getticket/user`,
         {
           params: { ticketStatus },
           headers: { Authorization: `Bearer ${token}` },
@@ -175,7 +186,8 @@ const Dashboard = () => {
       console.log(response);
 
       //  fetch all message and find unread message
-      const message = await axios.get("http://localhost:8080/api/allmessage");
+     //  const message = await axios.get("http://localhost:8080/api/allmessage");
+      const message = await axios.get(`${API_URL}/api/allmessage`);
       const notSeenMessage = [];
       console.log(role.id);
       message.data.forEach((msg) => {
@@ -232,8 +244,10 @@ const Dashboard = () => {
     const decode = await decodeToken();
     try {
       const endpoint = editing
-        ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`
-        : "http://localhost:8080/api/addticket";
+     //   ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`
+       // : "http://localhost:8080/api/addticket";
+         ? `${API_URL}/api/updateticket/${editing.ticketcode}`
+         : `${API_URL}/api/addticket`;
       const method = editing ? "put" : "post";
       const formData = {
         ...form,
@@ -253,7 +267,8 @@ const Dashboard = () => {
   const handleDelete = async (ticketcode) => {
     try {
       const response = await axios.delete(
-        `http://localhost:8080/api/deleteticket/${ticketcode}`
+    //     `http://localhost:8080/api/deleteticket/${ticketcode}`
+         `${API_URL}/api/deleteticket/${ticketcode}`
       );
       console.log(response.data);
       fetchData();
@@ -1093,7 +1108,6 @@ const Dashboard = () => {
                 </div>
               ))}
 
-              
               {closeTicket === "closed" && (
                 <div className=" text-center p-2 border rounded shadow-lg bg-light">
                   <h4 className="text-danger fw-bold mb-3">

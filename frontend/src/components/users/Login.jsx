@@ -6,6 +6,10 @@ import Header from '../dashboard/Header'
 
 
 const Login = () => {
+
+    const API_URL = import.meta.env.VITE_APP_URL;
+ 
+    
     const [phoneNo,setPhoneNo]=useState('')
     const [password,setPassword]=useState('')
     const [finalError,setFinalError]=useState('')
@@ -23,7 +27,8 @@ const Login = () => {
             return
         }
         try{
-            const response=await axios.post('http://localhost:8080/api/loginuser',{phoneNo,password})
+         //   const response=await axios.post('http://localhost:8080/api/loginuser', {phoneNo,password});
+            const response = await axios.post(`${API_URL}/api/loginuser`, { phoneNo, password });
             const token=response.data.token
             console.log("JWT Token:", token);
             sessionStorage.setItem('authtoken', token)

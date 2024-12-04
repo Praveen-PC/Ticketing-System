@@ -6,6 +6,8 @@ import Header from '../dashboard/Header'
 
 
 const Register = () => {
+    const API_URL = import.meta.env.VITE_APP_URL;
+
     const [name,setname]=useState('')
     const [phoneNo,setPhoneNo]=useState('')
     const [password,setPassword]=useState('')
@@ -24,7 +26,8 @@ const Register = () => {
             return
         }
         try{
-            const response=await axios.post('http://localhost:8080/api/adduser',{name,phoneNo,password})
+            // const response=await axios.post('http://localhost:8080/api/adduser',{name,phoneNo,password})
+           const response=await axios.post(`${API_URL}/api/adduser`,{name,phoneNo,password})
             console.log(response.data)
             Navigate('/')
             reset()

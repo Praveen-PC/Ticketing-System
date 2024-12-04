@@ -6,12 +6,15 @@ import axios from "axios";
 const Statusdashboard = () => {
   const [openCount, setOpenCount] = useState("0");
   const [closeCount, SetCloseCount] = useState("0");
+const API_URL = import.meta.env.VITE_APP_URL
+
 
   const fetchStatusCount = async () => {
     const token = sessionStorage.getItem("authtoken");
     try {
       const response = await axios.get(
-        "http://localhost:8080/api/getticket/user",
+   //  "http://localhost:8080/api/getticket/user",
+       `${API_URL}/api/getticket/user`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log(response.data);

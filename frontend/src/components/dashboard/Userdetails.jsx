@@ -4,14 +4,19 @@ import axios from "axios";
 import DataTable from "react-data-table-component";
 
 const Userdetails = () => {
+  const API_URL = import.meta.env.VITE_APP_URL
+
+
   const [data, setdata] = useState([]);
   const [searchTerm, setSearhTerm] = useState("");
   const [filterData, setFilterData] = useState([]);
   const [role, setrole] = useState("");
 
+
   const fetchUserDta = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/getuser");
+    //  const response = await axios.get("http://localhost:8080/api/getuser");
+      const response = await axios.get(`${API_URL}/api/getuser`);
       setdata(response.data);
       setFilterData(response.data);
       console.log(response.data);
@@ -39,7 +44,8 @@ const Userdetails = () => {
   const handleDelete = async (id) => {
     try {
       const response = await axios.delete(
-        `http://localhost:8080/api/deleteuser/${id}`
+      //   `http://localhost:8080/api/deleteuser/${id}`
+         `${API_URL}/api/deleteuser/${id}`
       );
       console.log(response.data, "is deleted");
       fetchUserDta();
@@ -52,7 +58,8 @@ const Userdetails = () => {
     setrole(role);
     try {
       const response = await axios.put(
-        `http://localhost:8080/api/updateuser/${id}`,
+      //   `http://localhost:8080/api/updateuser/${id}`,
+          `${API_URL}/api/updateuser/${id}`,
         { role: newRole }
       );
       console.log(response.data);
