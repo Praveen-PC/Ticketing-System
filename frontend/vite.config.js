@@ -7,14 +7,23 @@ export default defineConfig({
   build: {
     outDir: 'dist', // Ensures output is in the 'dist' directory
   },
-  proxy: {
-    "/api": {
-      target: "https://cri.macsoftautomations.in",
-      changeOrigin: true,
-      secure: false, // Optional for self-signed certificates
-    },
-  },
+
 })
 
 
 
+// import { defineConfig } from 'vite';
+// import react from '@vitejs/plugin-react';
+
+
+// export default defineConfig({
+//   plugins: [react()],
+//   build: {
+//     outDir: 'dist',
+//   },
+//   server: {
+//     host: 'cri.macsoftautomations.in', 
+//     port: 3000, 
+//     https: true, 
+//   },
+// });
