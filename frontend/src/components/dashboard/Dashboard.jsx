@@ -82,6 +82,7 @@ const Dashboard = () => {
         imei: lmsdata.serialnumber_imeinumber,
         motortype: lmsdata.motor_type,
       }));
+      
     } else {
       console.warn("No matching LMS data found.");
     }
