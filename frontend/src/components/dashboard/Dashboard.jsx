@@ -11,11 +11,15 @@ import {
 import { useParams } from "react-router-dom";
 
 const Dashboard = () => {
-  const API_URL = import.meta.env.VITE_APP_URL
- 
-  
+  const API_URL = import.meta.env.VITE_APP_URL;
+
+  const [playsound, setplaySound] = useState(false);
+  const [unreadmessage, setunreadmessage] = useState([]);
+  const [unreadmessageTime, setunreadmessageTime] = useState({});
+
+
+
   let { ticketStatus } = useParams();
-  console.log(ticketStatus);
   const [data, setdata] = useState([]);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
@@ -47,6 +51,48 @@ const Dashboard = () => {
   const [notification, setNotification] = useState([]);
   const [closeTicket, setCloseTicket] = useState("open");
 
+  const [lmsData, setLmsData] = useState([]);
+  const [lmssearch, setlmssearch] = useState("");
+
+  //get data from lms
+  const fetchlmsData = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:4000/api/customers/alldataforts"
+      );
+      console.log(response.data);
+      setLmsData(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
+    fetchlmsData();
+  }, []);
+
+  const handleLmsData = async () => {
+    const lmsdata = lmsData.find(
+      (data) => data.serialnumber_serialnumber === lmssearch
+    );
+    if (lmsdata) {
+      setform((prevForm) => ({
+        ...prevForm,
+        controllerno: lmsdata.serialnumber_serialnumber,
+        hp: lmsdata.product_type,
+        imei: lmsdata.serialnumber_imeinumber,
+        motortype: lmsdata.motor_type,
+      }));
+    } else {
+      console.warn("No matching LMS data found.");
+    }
+  };
+
+  useEffect(() => {
+    if (lmssearch) {
+      handleLmsData();
+    }
+  }, [lmssearch]);
+
   const checkduplicate = notification.filter(
     (value, index) => notification.indexOf(value) === index
   );
@@ -56,8 +102,7 @@ const Dashboard = () => {
     const ticketcode = messageDetails.ticketcode;
     if (!ticketcode) return;
     try {
-      // const response = await axios.get("http://localhost:8080/api/message", {
-        const response = await axios.get(`${API_URL}/api/message`, {
+      const response = await axios.get(`${API_URL}/api/message`, {
         params: { ticketcode },
       });
       const totalMessage = response.data.length;
@@ -65,27 +110,21 @@ const Dashboard = () => {
         const lastMessage = response.data[totalMessage - 1];
         const lastMessageTime = new Date(lastMessage.created_at);
         const currentTime = new Date();
-
         const lastMessageBy = lastMessage.messageby === "admin";
         const dayDiffernce = differenceInDays(currentTime, lastMessageTime);
-        if (lastMessageBy && dayDiffernce > 1) {
+        if (lastMessageBy && dayDiffernce > 2) {
           setCloseTicket("closed");
           console.log("closed : ", ticketcode);
-          // await axios.put(
-          //   `http://localhost:8080/api/closeticket/${ticketcode}`
-          // );
-          await axios.put(
-            `${API_URL}/api/closeticket/${ticketcode}`
-          );
+          await axios.put(`${API_URL}/api/closeticket/${ticketcode}`);
         }
       }
-
       setCoversation(response.data);
-      console.log(response.data);
+      setplaySound(false);
     } catch (error) {
       console.log(error);
     }
   };
+
   useEffect(() => {
     if (messageDetails.ticketcode) {
       fetchMessage();
@@ -98,12 +137,6 @@ const Dashboard = () => {
     console.log("message deatils:", value.user_id);
     const role = decodeToken();
     const user_role = role.role === "admin" ? "user" : "admin";
-    // axios
-    // .post(`http://localhost:8080/api/message/markAsRead`, {
-    //   ticketcode: value.ticketcode,
-    //   messageby: user_role,
-    // })
-
     axios
       .post(`${API_URL}/api/message/markAsRead`, {
         ticketcode: value.ticketcode,
@@ -132,8 +165,7 @@ const Dashboard = () => {
     };
     console.log("formdata", formdata);
     try {
-    //   const response = await axios.post("http://localhost:8080/api/addmessage",formdata);
-      const response = await axios.post(`${API_URL}/api/addmessage`,formdata);
+      const response = await axios.post(`${API_URL}/api/addmessage`, formdata);
       setMessage("");
       fetchMessage();
     } catch (error) {
@@ -148,7 +180,6 @@ const Dashboard = () => {
       notification.includes(ticket.ticketcode)
     );
     setFilterdata(ticketsWithNewMessages);
-
     console.log("Tickets with new messages: ", ticketsWithNewMessages);
   };
 
@@ -162,7 +193,7 @@ const Dashboard = () => {
     try {
       const jwttoken = token.split(".")[1];
       const decoded = JSON.parse(atob(jwttoken));
-      console.log(decoded);
+      // console.log(decoded);
       return decoded;
     } catch (error) {
       console.log(error);
@@ -175,46 +206,75 @@ const Dashboard = () => {
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
     try {
-   //    const response = await axios.get( "http://localhost:8080/api/getticket/user",
-       const response = await axios.get( `${API_URL}/api/getticket/user`,
-        {
-          params: { ticketStatus },
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+       const response = await axios.get( `${API_URL}/api/getticket/user`, { params: { ticketStatus }, headers: { Authorization: `Bearer ${token}` }, });
       setdata(response.data.reverse());
       console.log(response);
 
       //  fetch all message and find unread message
-     //  const message = await axios.get("http://localhost:8080/api/allmessage");
       const message = await axios.get(`${API_URL}/api/allmessage`);
       const notSeenMessage = [];
-      console.log(role.id);
+      const newmessageTime={};
+      console.log("Role:",role.role,"ID:",role.id)
       message.data.forEach((msg) => {
-        if (
-          role.role === "admin" &&
-          msg.isread === 0 &&
-          msg.messageby === "user"
-        ) {
+        if (role.role === "admin" && msg.isread === 0 && msg.messageby === "user") {
           notSeenMessage.push(msg.tickcode);
+          newmessageTime[msg.tickcode]=msg.created_at;
+          setplaySound(true)
         } else if (
-          role.role === "user" &&
-          msg.isread === 0 &&
-          msg.messageby === "admin" &&
-          msg.user_id === role.id
-        ) {
+          role.role === "user" && msg.isread === 0 &&msg.messageby === "admin" && msg.user_id === role.id) {
           notSeenMessage.push(msg.tickcode);
         }
       });
+      setunreadmessage(notSeenMessage)
+      setunreadmessageTime(newmessageTime)
+      console.log("NewMessageTime",newmessageTime);
       setNotification(notSeenMessage);
-      console.log("not seen message :", notSeenMessage);
+      console.log("NotSeenMessage",notSeenMessage);
     } catch (error) {
       console.log(error);
     }
   };
+
+ 
+
   useEffect(() => {
-    fetchData();
-  }, [form]);
+    if (playsound) {
+      const audio = new Audio('/notification-22-270130.mp3');
+      audio.play();
+      console.log("audio playing first")
+      setTimeout(() => setplaySound(false), 2 * 60 * 1000); // Stop sound after 2 minutes
+    }
+  }, [playsound]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentTime = Date.now();
+
+      Object.keys(unreadmessageTime).forEach((tickcode) => {
+        const messageTime = new Date(unreadmessageTime[tickcode]).getTime();
+        console.log("message time" ,messageTime)
+        const timeDifference = (currentTime - messageTime) / 60000; // Time difference in minutes
+
+        if (timeDifference > 3 && unreadmessage.includes(tickcode)) {
+          setplaySound(true);
+          console.log("long audio started")
+        }
+      });
+
+    }, 2 * 60 * 1000); // Check every 5 minutes
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [unreadmessage, unreadmessageTime]);
+
+  useEffect(()=>{
+    fetchData()
+  },[form])
+
+
+
+
+
+
 
   //   edit ticket
   const handleEdit = (value) => {
@@ -244,10 +304,10 @@ const Dashboard = () => {
     const decode = await decodeToken();
     try {
       const endpoint = editing
-     //   ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`
-       // : "http://localhost:8080/api/addticket";
-         ? `${API_URL}/api/updateticket/${editing.ticketcode}`
-         : `${API_URL}/api/addticket`;
+        ? //   ? `http://localhost:8080/api/updateticket/${editing.ticketcode}`
+          // : "http://localhost:8080/api/addticket";
+          `${API_URL}/api/updateticket/${editing.ticketcode}`
+        : `${API_URL}/api/addticket`;
       const method = editing ? "put" : "post";
       const formData = {
         ...form,
@@ -267,8 +327,8 @@ const Dashboard = () => {
   const handleDelete = async (ticketcode) => {
     try {
       const response = await axios.delete(
-    //     `http://localhost:8080/api/deleteticket/${ticketcode}`
-         `${API_URL}/api/deleteticket/${ticketcode}`
+        //     `http://localhost:8080/api/deleteticket/${ticketcode}`
+        `${API_URL}/api/deleteticket/${ticketcode}`
       );
       console.log(response.data);
       fetchData();
@@ -295,6 +355,10 @@ const Dashboard = () => {
     setform({
       customername: "",
       controllerno: "",
+      head: "",
+      imei: "",
+      hp: "",
+      motortype: "",
       state: "",
       district: "",
       village: "",
@@ -444,101 +508,98 @@ const Dashboard = () => {
               records.map((value, id) => (
                 <div
                   key={id}
-                  className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4"
+                  className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4 "
                 >
-                  <div className="card shadow-sm h-100 rounded bg-light hover-shadow-lg ">
-                    <div className="card-body ">
-                      <div className="d-flex justify-content-between">
-                        <h5 className="card-title text-primary mb-3 fw-bold">
+                  <div className="card  h-100 rounded-2 bg-light hover-shadow-md">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <h5 className="card-title text-primary fw-bold">
                           {value.ticketcode}
                         </h5>
 
                         <button
                           type="button"
-                          className="btn btn-outline-0 border-0 text-center"
+                          className="btn btn-outline-primary border-0"
                           data-bs-toggle="modal"
                           data-bs-target="#model1"
-                          style={{ marginTop: "-7px" }}
                           onClick={() => handleMessageDetails(value)}
                         >
-                          <h5 className="fw-bold text-primary">
-                            {" "}
-                            <i class="fa-regular fa-message"></i>
-                          </h5>
+                          <i className="fa-regular fa-comment-dots"></i>
                         </button>
 
-                        {value.status === "open" ? (
-                          <h6 className="card-title text-primary mb-3 fw-bold text-success ">
-                            {" "}
-                            {value.status}{" "}
-                          </h6>
-                        ) : (
-                          <h6 className="card-title text-primary mb-3 fw-bold text-danger">
-                            {" "}
-                            {value.status}{" "}
-                          </h6>
-                        )}
+                        <span
+                          className={`badge ${
+                            value.status === "open" ? "bg-success" : "bg-danger"
+                          } text-white`}
+                        >
+                          {value.status}
+                        </span>
                       </div>
 
                       {notification.includes(value.ticketcode) && (
-                        <div className="badge text-white bg-danger mb-3 py-1 px-3 rounded">
+                        <div className="badge bg-danger text-white mb-3 py-1 px-3 rounded">
                           New Message
                         </div>
                       )}
 
                       <p className="card-text">
-                        <strong>Customer Name:</strong> {value.customername}
+                        <strong >Customer:</strong> {value.customername}
                       </p>
                       <p className="card-text">
-                        <strong>Controller No:</strong> {value.controllerno}
+                        <strong >Controller No:</strong> {value.controllerno}
                       </p>
                       <p className="card-text">
-                        <strong>Fault Code:</strong> {value.faultcode}
+                        <strong >Fault Code:</strong> {value.faultcode}
                       </p>
                       <p className="card-text">
-                        <strong>State:</strong> {value.state}
+                        <strong >State:</strong> {value.state}
                       </p>
                       <p className="card-text">
-                        <strong>Complaint:</strong> {value.complainttype}
+                        <strong className="" >Complaint:</strong> {value.complainttype}
                       </p>
                       <p className="card-text">
-                        <strong>Details:</strong> {value.details}
+                        <strong className="text-dark " >Details:</strong> {value.details}
                       </p>
+                      <small>
+                        <p className="card-text">
+                          <strong className="text-danger">DateTime:</strong>{" "}
+                          {new Date(value.created_at).toLocaleDateString()}{" "}
+                          {new Date(value.created_at).toLocaleTimeString(
+                            "en-US",
+                            { hour: "2-digit", minute: "2-digit", hour12: true }
+                          )}
+                        </p>
+                      </small>
                     </div>
 
                     <div className="card-footer bg-light border-top-0">
-                      <div
-                        className="btn-group w-100"
-                        role="group"
-                        aria-label="Actions"
-                      >
+                      <div className="btn-group w-100" role="group">
                         <button
                           type="button"
-                          className="btn btn-outline-primary btn-sm w-100 mb-2 mb-sm-0"
+                          className="btn btn-outline-primary btn-sm w-100 mb-2"
                           data-bs-toggle="modal"
                           data-bs-target="#staticBackdrop"
                           onClick={() => handleEdit(value)}
                         >
-                          <i className="fa-regular fa-eye"></i>
+                          <i className="fa-regular fa-eye"></i> View
                         </button>
 
                         <button
                           type="button"
-                          className="btn btn-outline-primary btn-sm w-100 w-100 mb-2 mb-sm-0"
+                          className="btn btn-outline-primary btn-sm w-100 mb-2"
                           data-bs-toggle="modal"
                           data-bs-target="#exampleModal"
                           onClick={() => handleEdit(value)}
                         >
-                          <i className="fa-regular fa-pen-to-square"></i>
+                          <i className="fa-regular fa-edit"></i> Edit
                         </button>
 
                         <button
                           type="button"
-                          className="btn btn-outline-primary btn-sm w-100 w-100 mb-2 mb-sm-0"
+                          className="btn btn-outline-primary btn-sm w-100 mb-2"
                           onClick={() => handleDelete(value.ticketcode)}
                         >
-                          {" "}
-                          <i className="fa-solid fa-trash"></i>
+                          <i className="fa-solid fa-trash"></i> Delete
                         </button>
                       </div>
                     </div>
@@ -605,16 +666,27 @@ const Dashboard = () => {
                       Controller No: <span className="text-danger">*</span>
                     </label>
                     <input
-                      type="text"
+                      list="lmsData"
                       className="form-control"
-                      id="controllerno"
-                      placeholder="Enter Controller No"
-                      onChange={(e) =>
-                        setform({ ...form, controllerno: e.target.value })
-                      }
-                      required
                       value={form.controllerno}
+                      placeholder="Enter Controller No"
+                      onInput={(e) => {
+                        setform({ ...form, controllerno: e.target.value });
+                        setlmssearch(e.target.value);
+                      }}
                     />
+                    <datalist id="lmsData">
+                      {lmsData.map((value, id) => (
+                        <button>
+                          <option
+                            key={id}
+                            value={value.serialnumber_serialnumber}
+                          >
+                            {value.serialnumber_serialnumber}
+                          </option>
+                        </button>
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 
@@ -902,12 +974,7 @@ const Dashboard = () => {
                         {"   "}
                         <span>
                           {" "}
-                          (
-                          {format(
-                            new Date(editing.created_at),
-                            "MMM dd, yyyy"
-                          )}{" "}
-                          )
+                          ({new Date(editing.created_at).toLocaleString()})
                         </span>
                       </small>
                     </span>

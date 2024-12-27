@@ -10,14 +10,13 @@ const ticketRouter = require("./routes/ticketRouter");
 
 const app = express();
 
-app.use(
-  cors({
-    // origin:'http://localhost:5173',
-    //orgin: " https://cri.macsoftautomations.in",
-    origin: ["http://localhost:5173", "https://cri.macsoftautomations.in"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  })
-);
+// app.use(
+//   cors({
+//    origin: "http://localhost:5173",
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//   })
+// );
+app.use(cors())
 
 app.use(express.json());
 app.use(bodyparser.urlencoded({ extended: true }));

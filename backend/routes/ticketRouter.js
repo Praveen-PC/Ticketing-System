@@ -11,6 +11,7 @@ router.get('/getticket/user',verifyToken,ticketController.getTicketUser)
 router.put('/updateticket/:ticketcode',ticketController.upload.single('picture'),ticketController.updateTicketDetails)
 router.delete('/deleteticket/:ticketcode',ticketController.deleteTicketDetails)
 router.put('/closeticket/:ticketcode',ticketController.updateCloseTicket)
+router.get('/openticketpico',ticketController.openTicketForPico)
 
 
 router.post('/addmessage',ticketController.postMessage)

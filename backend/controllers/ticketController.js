@@ -37,6 +37,8 @@ const upload=multer({storage:storage})
 const postticket = async (req, res) => {
     const { customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details,user_id,status } = req.body;
     const picture = req.file ? req.file.path: null;
+    console.log(customername)
+
     try {
         const ticketcode = "TICK" + await autoTicketCode();
         const isUnique=await checkUnique(ticketcode)
@@ -47,6 +49,7 @@ const postticket = async (req, res) => {
         }
 
             const sql = "INSERT INTO ticketdetails (ticketcode, customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,user_id,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            console.log("console",sql)
             await db.query(sql, [ticketcode, customername, controllerno,head,imei,hp,motortype, state, district, village, block, faultcode, complainttype, details, picture,user_id,status]);
             const consql="Insert INTO conversation (tickcode,message,messageby,status,isread) Values(?,?,?,?,?)"
             await db.query(consql,[ticketcode,complainttype,user_id,status,0])
@@ -201,9 +204,22 @@ const markMessageAsRead = async (req, res) => {
     }
 };
 
-
+const openTicketForPico=async(req,res)=>{
+    try{
+        const sql= 'SELECT * FROM ticketdetails WHERE status=?'
+        const [user]=await db.query(sql,['open'])
+        const newticket=user[user.length-1]
+        console.log(newticket)
+        if(user.length===0){
+            return res.status(400).send('No Ticket is Open')
+        }
+        res.status(200).send(newticket)
+    }catch(error){
+        res.status(400).send({'error while sending':error})
+    }
+}
 
 
 
 module.exports = { postticket,updateTicketDetails ,deleteTicketDetails,getTicketUser,upload,postMessage,getMessage,getAllMessage,
-    markMessageAsRead,updateCloseTicket};
+    markMessageAsRead,updateCloseTicket,openTicketForPico};
