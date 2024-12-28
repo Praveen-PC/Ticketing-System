@@ -72,15 +72,16 @@ const Dashboard = () => {
 
   const handleLmsData = async () => {
     const lmsdata = lmsData.find(
-      (data) => data.serialnumber_serialnumber === lmssearch
+      (data) => data.serialnumber === lmssearch
     );
+    console.log("lmsdata",lmsdata)
     if (lmsdata) {
       setform((prevForm) => ({
         ...prevForm,
-        controllerno: lmsdata.serialnumber_serialnumber,
-        hp: lmsdata.product_type,
-        imei: lmsdata.serialnumber_imeinumber,
-        motortype: lmsdata.motor_type,
+        controllerno: lmsdata.serialnumber,
+        hp: lmsdata.powerrating,
+        imei: lmsdata.imeinumber,
+        motortype: lmsdata.motortype,
       }));
       
     } else {
@@ -209,7 +210,6 @@ const Dashboard = () => {
     try {
        const response = await axios.get( `${API_URL}/api/getticket/user`, { params: { ticketStatus }, headers: { Authorization: `Bearer ${token}` }, });
       setdata(response.data.reverse());
-      console.log(response);
 
       //  fetch all message and find unread message
       const message = await axios.get(`${API_URL}/api/allmessage`);
@@ -681,9 +681,9 @@ const Dashboard = () => {
                         <button>
                           <option
                             key={id}
-                            value={value.serialnumber_serialnumber}
+                            value={value.serialnumber}
                           >
-                            {value.serialnumber_serialnumber}
+                            {value.serialnumber}
                           </option>
                         </button>
                       ))}
