@@ -17,8 +17,6 @@ const Dashboard = () => {
   const [unreadmessage, setunreadmessage] = useState([]);
   const [unreadmessageTime, setunreadmessageTime] = useState({});
 
-
-
   let { ticketStatus } = useParams();
   const [data, setdata] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -54,6 +52,7 @@ const Dashboard = () => {
   const [lmsData, setLmsData] = useState([]);
   const [lmssearch, setlmssearch] = useState("");
 
+  // correct data to fetch from api
   //get data from lms
   const fetchlmsData = async () => {
     try {
@@ -71,10 +70,8 @@ const Dashboard = () => {
   }, []);
 
   const handleLmsData = async () => {
-    const lmsdata = lmsData.find(
-      (data) => data.serialnumber === lmssearch
-    );
-    console.log("lmsdata",lmsdata)
+    const lmsdata = lmsData.find((data) => data.serialnumber === lmssearch);
+    console.log("lmsdata", lmsdata);
     if (lmsdata) {
       setform((prevForm) => ({
         ...prevForm,
@@ -83,8 +80,13 @@ const Dashboard = () => {
         imei: lmsdata.imeinumber,
         motortype: lmsdata.motortype,
       }));
-      
     } else {
+      setform((prevForm) => ({
+        ...prevForm,
+        hp: '',
+        imei: '',
+        motortype: '',
+      }));
       console.warn("No matching LMS data found.");
     }
   };
@@ -208,41 +210,50 @@ const Dashboard = () => {
   const fetchData = async () => {
     const token = sessionStorage.getItem("authtoken");
     try {
-       const response = await axios.get( `${API_URL}/api/getticket/user`, { params: { ticketStatus }, headers: { Authorization: `Bearer ${token}` }, });
+      const response = await axios.get(`${API_URL}/api/getticket/user`, {
+        params: { ticketStatus },
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setdata(response.data.reverse());
 
       //  fetch all message and find unread message
       const message = await axios.get(`${API_URL}/api/allmessage`);
       const notSeenMessage = [];
-      const newmessageTime={};
-      console.log("Role:",role.role,"ID:",role.id)
+      const newmessageTime = {};
+      console.log("Role:", role.role, "ID:", role.id);
       message.data.forEach((msg) => {
-        if (role.role === "admin" && msg.isread === 0 && msg.messageby === "user") {
+        if (
+          role.role === "admin" &&
+          msg.isread === 0 &&
+          msg.messageby === "user"
+        ) {
           notSeenMessage.push(msg.tickcode);
-          newmessageTime[msg.tickcode]=msg.created_at;
-          setplaySound(true)
+          newmessageTime[msg.tickcode] = msg.created_at;
+          setplaySound(true);
         } else if (
-          role.role === "user" && msg.isread === 0 &&msg.messageby === "admin" && msg.user_id === role.id) {
+          role.role === "user" &&
+          msg.isread === 0 &&
+          msg.messageby === "admin" &&
+          msg.user_id === role.id
+        ) {
           notSeenMessage.push(msg.tickcode);
         }
       });
-      setunreadmessage(notSeenMessage)
-      setunreadmessageTime(newmessageTime)
-      console.log("NewMessageTime",newmessageTime);
+      setunreadmessage(notSeenMessage);
+      setunreadmessageTime(newmessageTime);
+      console.log("NewMessageTime", newmessageTime);
       setNotification(notSeenMessage);
-      console.log("NotSeenMessage",notSeenMessage);
+      console.log("NotSeenMessage", notSeenMessage);
     } catch (error) {
       console.log(error);
     }
   };
 
- 
-
   useEffect(() => {
     if (playsound) {
-      const audio = new Audio('/notification-22-270130.mp3');
+      const audio = new Audio("/notification-22-270130.mp3");
       audio.play();
-      console.log("audio playing first")
+      console.log("audio playing first");
       setTimeout(() => setplaySound(false), 2 * 60 * 1000); // Stop sound after 2 minutes
     }
   }, [playsound]);
@@ -253,29 +264,22 @@ const Dashboard = () => {
 
       Object.keys(unreadmessageTime).forEach((tickcode) => {
         const messageTime = new Date(unreadmessageTime[tickcode]).getTime();
-        console.log("message time" ,messageTime)
+        console.log("message time", messageTime);
         const timeDifference = (currentTime - messageTime) / 60000; // Time difference in minutes
 
         if (timeDifference > 3 && unreadmessage.includes(tickcode)) {
           setplaySound(true);
-          console.log("long audio started")
+          console.log("long audio started");
         }
       });
-
     }, 2 * 60 * 1000); // Check every 5 minutes
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, [unreadmessage, unreadmessageTime]);
 
-  useEffect(()=>{
-    fetchData()
-  },[form])
-
-
-
-
-
-
+  useEffect(() => {
+    fetchData();
+  }, [form]);
 
   //   edit ticket
   const handleEdit = (value) => {
@@ -544,22 +548,24 @@ const Dashboard = () => {
                       )}
 
                       <p className="card-text">
-                        <strong >Customer:</strong> {value.customername}
+                        <strong>Customer:</strong> {value.customername}
                       </p>
                       <p className="card-text">
-                        <strong >Controller No:</strong> {value.controllerno}
+                        <strong>Controller No:</strong> {value.controllerno}
                       </p>
                       <p className="card-text">
-                        <strong >Fault Code:</strong> {value.faultcode}
+                        <strong>Fault Code:</strong> {value.faultcode}
                       </p>
                       <p className="card-text">
-                        <strong >State:</strong> {value.state}
+                        <strong>State:</strong> {value.state}
                       </p>
                       <p className="card-text">
-                        <strong className="" >Complaint:</strong> {value.complainttype}
+                        <strong className="">Complaint:</strong>{" "}
+                        {value.complainttype}
                       </p>
                       <p className="card-text">
-                        <strong className="text-dark " >Details:</strong> {value.details}
+                        <strong className="text-dark ">Details:</strong>{" "}
+                        {value.details}
                       </p>
                       <small>
                         <p className="card-text">
@@ -679,10 +685,7 @@ const Dashboard = () => {
                     <datalist id="lmsData">
                       {lmsData.map((value, id) => (
                         <button>
-                          <option
-                            key={id}
-                            value={value.serialnumber}
-                          >
+                          <option key={id} value={value.serialnumber}>
                             {value.serialnumber}
                           </option>
                         </button>
