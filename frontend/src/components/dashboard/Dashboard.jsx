@@ -63,7 +63,7 @@ const Dashboard = () => {
           { params: { serialnumber } }
         );
         const lmsdata = response.data;
-        setsearcherror(""); // Clear error if data is found
+        setsearcherror("");
         if (lmsdata) {
           setform((prevForm) => ({
             ...prevForm,
@@ -80,7 +80,7 @@ const Dashboard = () => {
           imei: "",
           motortype: "",
         }));
-        setsearcherror(""); // Clear error for invalid input
+        setsearcherror(""); 
       }
     } catch (error) {
       if (error.response && error.response.status === 404) {
@@ -273,7 +273,7 @@ const Dashboard = () => {
           console.log("long audio started");
         }
       });
-    }, 2 * 60 * 1000); // Check every 5 minutes
+    }, 30 * 60 * 1000); // Check every 5 minutes
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, [unreadmessage, unreadmessageTime]);
@@ -974,7 +974,7 @@ const Dashboard = () => {
                         {"   "}
                         <span>
                           {" "}
-                          ({new Date(editing.created_at).toLocaleString()})
+                     <small>   ({new Date(editing.created_at).toLocaleString()})</small>  
                         </span>
                       </small>
                     </span>
