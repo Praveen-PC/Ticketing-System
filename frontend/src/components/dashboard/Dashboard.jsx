@@ -49,53 +49,54 @@ const Dashboard = () => {
   const [notification, setNotification] = useState([]);
   const [closeTicket, setCloseTicket] = useState("open");
 
-  const [lmsData, setLmsData] = useState([]);
-  const [lmssearch, setlmssearch] = useState("");
-
-  // correct data to fetch from api
-  //get data from lms
-  const fetchlmsData = async () => {
+  const [lmsSearch, setLmsSearch] = useState("");
+  const [searcherror, setsearcherror] = useState("");
+  const fetchSingleData = async (serialnumber) => {
     try {
-      const response = await axios.get(
-        "http://localhost:4000/api/customers/alldataforts"
-      );
-      console.log(response.data);
-      setLmsData(response.data);
+      if (
+        serialnumber.length === 10 ||
+        serialnumber.length === 16 ||
+        serialnumber.length === 17
+      ) {
+        const response = await axios.get(
+          `http://localhost:4000/api/customers/alldataforts`,
+          { params: { serialnumber } }
+        );
+        const lmsdata = response.data;
+        setsearcherror(""); // Clear error if data is found
+        if (lmsdata) {
+          setform((prevForm) => ({
+            ...prevForm,
+            controllerno: lmsdata.serialnumber,
+            hp: lmsdata.powerrating,
+            imei: lmsdata.imeinumber,
+            motortype: lmsdata.motortype,
+          }));
+        }
+      } else {
+        setform((prevForm) => ({
+          ...prevForm,
+          hp: "",
+          imei: "",
+          motortype: "",
+        }));
+        setsearcherror(""); // Clear error for invalid input
+      }
     } catch (error) {
-      console.log(error);
-    }
-  };
-  useEffect(() => {
-    fetchlmsData();
-  }, []);
-
-  const handleLmsData = async () => {
-    const lmsdata = lmsData.find((data) => data.serialnumber === lmssearch);
-    console.log("lmsdata", lmsdata);
-    if (lmsdata) {
-      setform((prevForm) => ({
-        ...prevForm,
-        controllerno: lmsdata.serialnumber,
-        hp: lmsdata.powerrating,
-        imei: lmsdata.imeinumber,
-        motortype: lmsdata.motortype,
-      }));
-    } else {
-      setform((prevForm) => ({
-        ...prevForm,
-        hp: '',
-        imei: '',
-        motortype: '',
-      }));
-      console.warn("No matching LMS data found.");
+      if (error.response && error.response.status === 404) {
+        console.warn("No matching serial number found.");
+        setsearcherror("Check Controller Number");
+      } else {
+        console.error("Error fetching data:", error);
+      }
     }
   };
 
   useEffect(() => {
-    if (lmssearch) {
-      handleLmsData();
+    if (lmsSearch) {
+      fetchSingleData(lmsSearch);
     }
-  }, [lmssearch]);
+  }, [lmsSearch]);
 
   const checkduplicate = notification.filter(
     (value, index) => notification.indexOf(value) === index
@@ -673,24 +674,19 @@ const Dashboard = () => {
                       Controller No: <span className="text-danger">*</span>
                     </label>
                     <input
-                      list="lmsData"
                       className="form-control"
                       value={form.controllerno}
                       placeholder="Enter Controller No"
                       onInput={(e) => {
                         setform({ ...form, controllerno: e.target.value });
-                        setlmssearch(e.target.value);
+                        setLmsSearch(e.target.value);
                       }}
                     />
-                    <datalist id="lmsData">
-                      {lmsData.map((value, id) => (
-                        <button>
-                          <option key={id} value={value.serialnumber}>
-                            {value.serialnumber}
-                          </option>
-                        </button>
-                      ))}
-                    </datalist>
+                    {searcherror && (
+                      <small>
+                        <div className="text-danger mt-1">{searcherror}</div>
+                      </small>
+                    )}
                   </div>
                 </div>
 
