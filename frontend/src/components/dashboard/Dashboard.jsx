@@ -85,7 +85,7 @@ const Dashboard = () => {
     } catch (error) {
       if (error.response && error.response.status === 404) {
         console.warn("No matching serial number found.");
-        setsearcherror("Check Controller Number");
+        setsearcherror("Contoller Not Found");
       } else {
         console.error("Error fetching data:", error);
       }
@@ -684,7 +684,7 @@ const Dashboard = () => {
                     />
                     {searcherror && (
                       <small>
-                        <div className="text-danger mt-1">{searcherror}</div>
+                        <div className="text-danger mt-1 text-sm">{searcherror}</div>
                       </small>
                     )}
                   </div>
